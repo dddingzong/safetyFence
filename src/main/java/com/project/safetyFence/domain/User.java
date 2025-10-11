@@ -35,12 +35,9 @@ public class User {
     @Column(nullable = false)
     private String linkCode;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ServiceCode serviceCode;
 
     // 사용자 신규 가입 시
-    public User (String name, String password, LocalDate birth, String number, String homeAddress, String centerAddress, String linkCode, ServiceCode serviceCode) {
+    public User (String name, String password, LocalDate birth, String number, String homeAddress, String centerAddress, String linkCode) {
         this.name = name;
         this.password = password;
         this.birth = birth;
@@ -48,7 +45,6 @@ public class User {
         this.homeAddress = homeAddress;
         this.centerAddress = centerAddress;
         this.linkCode = linkCode;
-        this.serviceCode = serviceCode;
     }
 
     public void updateHomeAddress(String homeAddress){
