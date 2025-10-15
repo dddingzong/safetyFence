@@ -4,10 +4,12 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Entity
 @Getter
 @NoArgsConstructor
-public class Link {
+public class UserEvent {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -18,18 +20,20 @@ public class Link {
     private User user;
 
     @Column(nullable = false)
-    private String userNumber;
+    private String event;
 
-    private String relation;
+    @Column(nullable = false)
+    private LocalDate eventDate;
 
-    public Link(User user, String userNumber, String relation) {
+    public UserEvent(User user, String event, LocalDate eventDate) {
         this.user = user;
-        this.userNumber = userNumber;
-        this.relation = relation;
+        this.event = event;
+        this.eventDate = eventDate;
     }
 
     // 연관관계 편의 메서드 (package-private)
     void registerUser(User user) {
         this.user = user;
     }
+
 }

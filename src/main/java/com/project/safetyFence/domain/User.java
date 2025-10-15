@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -12,8 +14,9 @@ import java.time.LocalDate;
 @Table(name = "\"user\"")
 public class User {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Id
+    @Column(nullable = false, unique = true)
+    private String number;
 
     @Column(nullable = false)
     private String name;
@@ -24,35 +27,91 @@ public class User {
     @Column(nullable = false)
     private LocalDate birth;
 
-    @Column(nullable = false, unique = true)
-    private String number;
-
-    @Column(nullable = false)
-    private String homeAddress;
-
-    private String centerAddress;
-
     @Column(nullable = false)
     private String linkCode;
 
+    // 1:1 양방향 관계 - UserAddress
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserAddress userAddress;
 
-    // 사용자 신규 가입 시
-    public User (String name, String password, LocalDate birth, String number, String homeAddress, String centerAddress, String linkCode) {
+    // 1:N 양방향 관계 - UserLocation
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserLocation> userLocations = new ArrayList<>();
+
+    // 1:N 양방향 관계 - Log
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Log> logs = new ArrayList<>();
+
+    // 1:N 양방향 관계 - Link
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Link> links = new ArrayList<>();
+
+    // 1:N 양방향 관계 - Geofence
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Geofence> geofences = new ArrayList<>();
+
+    // 1:N 양방향 관계 - userEvent
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserEvent> userEvents = new ArrayList<>();
+
+    public User(String number, String name, String password, LocalDate birth, String linkCode) {
+        this.number = number;
         this.name = name;
         this.password = password;
         this.birth = birth;
-        this.number = number;
-        this.homeAddress = homeAddress;
-        this.centerAddress = centerAddress;
         this.linkCode = linkCode;
     }
 
-    public void updateHomeAddress(String homeAddress){
-        this.homeAddress = homeAddress;
+    // UserAddress 연관관계 편의 메서드
+    public void registerUserAddress(UserAddress userAddress) {
+        this.userAddress = userAddress;
+        if (userAddress != null && userAddress.getUser() != this) {
+            userAddress.registerUser(this);
+        }
     }
 
-    public void updateCenterAddress(String centerAddress){
-        this.centerAddress = centerAddress;
+    // UserLocation 연관관계 편의 메서드
+    public void addUserLocation(UserLocation userLocation) {
+        userLocations.add(userLocation);
+        if (userLocation.getUser() != this) {
+            userLocation.registerUser(this);
+        }
+    }
+
+    public void removeUserLocation(UserLocation userLocation) {
+        userLocations.remove(userLocation);
+    }
+
+    // Log 연관관계 편의 메서드
+    public void addLog(Log log) {
+        logs.add(log);
+        if (log.getUser() != this) {
+            log.registerUser(this);
+        }
+    }
+
+    // Link 연관관계 편의 메서드
+    public void addLink(Link link) {
+        links.add(link);
+        if (link.getUser() != this) {
+            link.registerUser(this);
+        }
+    }
+
+    // Geofence 연관관계 편의 메서드
+    public void addGeofence(Geofence geofence) {
+        geofences.add(geofence);
+        if (geofence.getUser() != this) {
+            geofence.registerUser(this);
+        }
+    }
+
+    // UserEvent 연관관계 편의 메서드
+    public void addUserEvent(UserEvent userEvent) {
+        userEvents.add(userEvent);
+        if (userEvent.getUser() != this) {
+            userEvent.registerUser(this);
+        }
     }
 
 }
