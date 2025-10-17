@@ -30,7 +30,7 @@ public class CareGeofenceTimeAlgorithm {
         LocalDateTime departureTime = history.get(0).getTime();
         LocalDateTime arrivalTime = history.get(1).getTime();
 
-        UserCareGeofence userCareGeofence = userCareGeofenceRepository.findByNumber(number);
+//        UserCareGeofence userCareGeofence = userCareGeofenceRepository.findByNumber(number);
 
         BigDecimal homeLatitude = userCareGeofence.getHomeLatitude();
         BigDecimal homeLongitude = userCareGeofence.getHomeLongitude();
