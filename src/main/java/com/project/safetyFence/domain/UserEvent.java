@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -25,10 +26,14 @@ public class UserEvent {
     @Column(nullable = false)
     private LocalDate eventDate;
 
-    public UserEvent(User user, String event, LocalDate eventDate) {
+    @Column
+    private LocalDateTime startTime;
+
+    public UserEvent(User user, String event, LocalDate eventDate, LocalDateTime startTime) {
         this.user = user;
         this.event = event;
         this.eventDate = eventDate;
+        this.startTime = startTime;
     }
 
     // 연관관계 편의 메서드 (package-private)
