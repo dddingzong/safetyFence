@@ -63,7 +63,7 @@ public class User {
     }
 
     // UserAddress 연관관계 편의 메서드
-    public void registerUserAddress(UserAddress userAddress) {
+    public void addUserAddress(UserAddress userAddress) {
         this.userAddress = userAddress;
         if (userAddress != null && userAddress.getUser() != this) {
             userAddress.registerUser(this);

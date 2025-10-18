@@ -12,6 +12,9 @@ public class UserAddress {
     @Id
     private String number;
 
+    @Version
+    private Long version;
+
     // 1:1 양방향 관계의 주인 (FK 관리)
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId  // number를 User의 PK와 공유
