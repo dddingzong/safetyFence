@@ -33,7 +33,7 @@ public class Geofence {
     private BigDecimal longitude;
 
     @Column(nullable = false)
-    private int type;
+    private int type; // 0: 영구, 1: 일시
 
     private LocalDateTime startTime;
 
