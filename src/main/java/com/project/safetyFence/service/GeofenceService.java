@@ -33,7 +33,7 @@ public class GeofenceService {
     }
 
     public Geofence saveInitialCenterGeofence(UserAddress userAddress) {
-        String address = userAddress.getCenterAddress();
+        String address = userAddress.getCenterStreetAddress();
         KakaoAddressResponseDto.DocumentDto document = kakaoApiService.requestAddressSearch(address);
 
         BigDecimal latitude = new BigDecimal(document.getLatitude());
