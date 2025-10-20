@@ -1,4 +1,4 @@
-package com.project.safetyFence.domain.dto;
+package com.project.safetyFence.domain.dto.request;
 
 import lombok.Getter;
 
