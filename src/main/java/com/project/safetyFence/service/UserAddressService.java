@@ -2,7 +2,7 @@ package com.project.safetyFence.service;
 
 import com.project.safetyFence.domain.User;
 import com.project.safetyFence.domain.UserAddress;
-import com.project.safetyFence.domain.dto.SignUpRequestDto;
+import com.project.safetyFence.domain.dto.request.SignUpRequestDto;
 import com.project.safetyFence.repository.UserAddressRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

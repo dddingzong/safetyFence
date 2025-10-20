@@ -1,8 +1,8 @@
 package com.project.safetyFence.controller;
 
 import com.project.safetyFence.domain.User;
-import com.project.safetyFence.domain.dto.SignInRequestDto;
-import com.project.safetyFence.domain.dto.SignUpRequestDto;
+import com.project.safetyFence.domain.dto.request.SignInRequestDto;
+import com.project.safetyFence.domain.dto.request.SignUpRequestDto;
 import com.project.safetyFence.exception.CustomException;
 import com.project.safetyFence.exception.ErrorResult;
 import com.project.safetyFence.service.UserService;

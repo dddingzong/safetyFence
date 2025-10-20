@@ -1,8 +1,9 @@
 package com.project.safetyFence.service;
 
+import com.project.safetyFence.domain.Geofence;
 import com.project.safetyFence.domain.User;
 import com.project.safetyFence.domain.UserAddress;
-import com.project.safetyFence.domain.dto.SignUpRequestDto;
+import com.project.safetyFence.domain.dto.request.SignUpRequestDto;
 import com.project.safetyFence.generator.LinkCodeGenerator;
 import com.project.safetyFence.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ public class UserService {
     private final LinkCodeGenerator linkCodeGenerator;
     private final UserRepository userRepository;
     private final UserAddressService userAddressService;
+    private final GeofenceService geofenceService;
 
     public boolean checkExistNumber(String number) {
         return userRepository.existsByNumber(number);
@@ -40,10 +42,17 @@ public class UserService {
         UserAddress userAddress = userAddressService.makeUserAddressEntity(signUpRequestDto, user);
         user.addUserAddress(userAddress);
 
-        userRepository.save(user);
-
         // user 주소로 geofence 생성
-        //saveGeofenceService.saveInitialGeofence(user, userAddress);
+        Geofence homeGeofence = geofenceService.saveInitialHomeGeofence(userAddress);
+        user.addGeofence(homeGeofence);
+
+        // center 주소가 있을 경우에만 geofence 생성
+        if (signUpRequestDto.getCenterStreetAddress() != null && !signUpRequestDto.getCenterStreetAddress().isEmpty()) {
+            Geofence centerGeofence = geofenceService.saveInitialCenterGeofence(userAddress);
+            user.addGeofence(centerGeofence);
+        }
+
+        userRepository.save(user);
 
         return user;
     }
