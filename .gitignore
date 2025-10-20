@@ -25,9 +25,8 @@ bin/
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
-src/main/java/com/project/paypass_renewal/util/ZipCodeToLatLogUtils.java
-src/main/java/com/project/paypass_renewal/util/PushNotificationService.java
-src/main/java/com/project/paypass_renewal/util/CheckCurrentStationCondition.java
+src/main/resources/application.properties
+src/main/resources/application-test.properties
 
 ### NetBeans ###
 /nbproject/private/
