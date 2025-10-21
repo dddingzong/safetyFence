@@ -1,0 +1,22 @@
+package com.project.safetyFence.domain.dto.request;
+
+import lombok.Getter;
+
+@Getter
+public class GeofenceRequestDto {
+    private String number;
+    private String name;
+    private String address;
+    private int type;
+    private String startTime;
+    private String endTime;
+
+    public GeofenceRequestDto(String number, String name, String address, int type, String startTime, String endTime) {
+        this.number = number;
+        this.name = name;
+        this.address = address;
+        this.type = type;
+        this.startTime = startTime;
+        this.endTime = endTime;
+    }
+}

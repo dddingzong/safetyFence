@@ -4,8 +4,8 @@ import com.project.safetyFence.domain.Geofence;
 import com.project.safetyFence.domain.User;
 import com.project.safetyFence.domain.UserAddress;
 import com.project.safetyFence.domain.dto.request.FenceInRequestDto;
+import com.project.safetyFence.domain.dto.request.GeofenceRequestDto;
 import com.project.safetyFence.domain.dto.request.NumberRequestDto;
-import com.project.safetyFence.domain.dto.response.KakaoAddressResponseDto;
 import com.project.safetyFence.repository.GeofenceRepository;
 import com.project.safetyFence.repository.UserRepository;
 import com.project.safetyFence.util.kakaoApi.KakaoApiService;
@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+
+import static com.project.safetyFence.domain.dto.response.KakaoAddressResponseDto.*;
 
 @Slf4j
 @Service
@@ -30,7 +32,7 @@ public class GeofenceService {
         // 1. UserAddress에서 도로명 주소 문자열을 가져옵니다.
         String address = userAddress.getHomeStreetAddress();
         // 2. Kakao API를 호출하여 주소를 좌표로 변환합니다.
-        KakaoAddressResponseDto.DocumentDto document = kakaoApiService.requestAddressSearch(address);
+        DocumentDto document = kakaoApiService.requestAddressSearch(address);
 
         BigDecimal latitude = new BigDecimal(document.getLatitude());
         BigDecimal longitude = new BigDecimal(document.getLongitude());
@@ -41,7 +43,7 @@ public class GeofenceService {
 
     public Geofence saveInitialCenterGeofence(UserAddress userAddress) {
         String address = userAddress.getCenterStreetAddress();
-        KakaoAddressResponseDto.DocumentDto document = kakaoApiService.requestAddressSearch(address);
+        DocumentDto document = kakaoApiService.requestAddressSearch(address);
 
         BigDecimal latitude = new BigDecimal(document.getLatitude());
         BigDecimal longitude = new BigDecimal(document.getLongitude());
@@ -78,6 +80,28 @@ public class GeofenceService {
                 log.info("지속적인 지오펜스 진입: 지오펜스 ID " + geofence.getId() + "의 maxSequence가 이미 0입니다.");
             }
         }
+    }
+
+    @Transactional
+    public void createNewFence(GeofenceRequestDto geofenceRequestDto) {
+        User user = userRepository.findByNumber(geofenceRequestDto.getNumber());
+        String address = geofenceRequestDto.getAddress();
+        DocumentDto document = kakaoApiService.requestAddressSearch(address);
+
+        BigDecimal latitude = new BigDecimal(document.getLatitude());
+        BigDecimal longitude = new BigDecimal(document.getLongitude());
+
+        Geofence geofence;
+        if (geofenceRequestDto.getType() == 0) { // 영구 지오펜스
+            geofence = new Geofence(user, geofenceRequestDto.getName(), address, latitude, longitude, 0, 999);
+        } else { // 일시 지오펜스
+            geofence = new Geofence(user, geofenceRequestDto.getName(), address, latitude, longitude, 1,
+                    java.time.LocalDateTime.parse(geofenceRequestDto.getStartTime()),
+                    java.time.LocalDateTime.parse(geofenceRequestDto.getEndTime()), 100);
+        }
+
+        user.addGeofence(geofence);
+        geofenceRepository.save(geofence);
     }
 
 }
