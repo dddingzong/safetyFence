@@ -1,7 +1,6 @@
-package com.project.safetyFence.service;
+package com.project.safetyFence.util.kakaoApi;
 
 import com.project.safetyFence.domain.dto.response.KakaoAddressResponseDto;
-import com.project.safetyFence.util.kakaoApi.KakaoApiService;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @SpringBootTest
+@Disabled("실제 카카오 API 키가 필요하므로 기본적으로 비활성화되어 있습니다.")
 class KakaoApiServiceLiveTest {
 
     @Autowired
