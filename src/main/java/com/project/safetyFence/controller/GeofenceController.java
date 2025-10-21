@@ -1,6 +1,7 @@
 package com.project.safetyFence.controller;
 
 import com.project.safetyFence.domain.Geofence;
+import com.project.safetyFence.domain.dto.request.FenceInRequestDto;
 import com.project.safetyFence.domain.dto.request.NumberRequestDto;
 import com.project.safetyFence.domain.dto.response.GeofenceResponseDto;
 import com.project.safetyFence.service.GeofenceService;
@@ -39,8 +40,13 @@ public class GeofenceController {
             responseDtos.add(responseDto);
         }
 
-
         return ResponseEntity.ok(responseDtos);
+    }
+
+    @PostMapping("/geofence/userFenceIn")
+    public ResponseEntity<String> userFenceIn(@RequestBody FenceInRequestDto fenceInRequestDto) {
+        geofenceService.userFenceIn(fenceInRequestDto);
+        return ResponseEntity.ok("사용자의 진입이 성공적으로 감지되었습니다.");
     }
 
 }

@@ -70,4 +70,8 @@ public class Geofence {
         this.user = user;
     }
 
+    public void decreaseMaxSequence() {
+        this.maxSequence--;
+    }
+
 }

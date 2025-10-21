@@ -9,5 +9,4 @@ import java.util.List;
 public interface GeofenceRepository extends JpaRepository<Geofence, Long> {
 
     List<Geofence> findByUser(User user);
-
 }

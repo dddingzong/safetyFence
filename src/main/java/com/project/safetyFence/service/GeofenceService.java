@@ -3,6 +3,7 @@ package com.project.safetyFence.service;
 import com.project.safetyFence.domain.Geofence;
 import com.project.safetyFence.domain.User;
 import com.project.safetyFence.domain.UserAddress;
+import com.project.safetyFence.domain.dto.request.FenceInRequestDto;
 import com.project.safetyFence.domain.dto.request.NumberRequestDto;
 import com.project.safetyFence.domain.dto.response.KakaoAddressResponseDto;
 import com.project.safetyFence.repository.GeofenceRepository;
@@ -54,6 +55,29 @@ public class GeofenceService {
         User user = userRepository.findByNumber(numberRequestDto.getNumber());
         List<Geofence> geofences = geofenceRepository.findByUser(user);
         return geofences;
+    }
+
+    @Transactional
+    public void userFenceIn(FenceInRequestDto fenceInRequestDto) {
+        User user = userRepository.findByNumber(fenceInRequestDto.getNumber());
+        Geofence geofence = geofenceRepository.findById(fenceInRequestDto.getGeofenceId())
+                .orElseThrow(() -> new IllegalArgumentException("Geofence not found"));
+
+        // 일회성이면 삭제
+        if (geofence.getType() == 1) {
+            geofenceRepository.delete(geofence);
+            log.info("일시적인 지오펜스 진입: 지오펜스 ID " + geofence.getId() + " 삭제됨.");
+        }
+
+        // 지속성이면 maxSequence 차감
+        if (geofence.getType() == 0) {
+            int currentMaxSequence = geofence.getMaxSequence();
+            if (currentMaxSequence > 0) {
+                geofence.decreaseMaxSequence();
+            } else {
+                log.info("지속적인 지오펜스 진입: 지오펜스 ID " + geofence.getId() + "의 maxSequence가 이미 0입니다.");
+            }
+        }
     }
 
 }
