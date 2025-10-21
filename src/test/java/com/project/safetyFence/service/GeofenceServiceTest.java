@@ -3,8 +3,10 @@ package com.project.safetyFence.service;
 import com.project.safetyFence.domain.Geofence;
 import com.project.safetyFence.domain.User;
 import com.project.safetyFence.domain.dto.request.FenceInRequestDto;
+import com.project.safetyFence.domain.dto.request.GeofenceRequestDto;
 import com.project.safetyFence.repository.GeofenceRepository;
 import com.project.safetyFence.repository.UserRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -155,5 +157,75 @@ class GeofenceServiceTest {
         Geofence updated = geofenceRepository.findById(permanentGeofence.getId())
                 .orElseThrow();
         assertThat(updated.getMaxSequence()).isEqualTo(initialMaxSequence - 3);
+    }
+
+    @Test
+    @DisplayName("createNewFence - permanent geofence creation success")
+    void createNewFence_PermanentGeofence_Success() {
+        // given
+        GeofenceRequestDto requestDto = new GeofenceRequestDto(
+                TEST_NUMBER,
+                "Test Location",
+                "서울시 강남구 테헤란로 152",
+                0,  // permanent type
+                null,
+                null
+        );
+
+        int initialCount = testUser.getGeofences().size();
+
+        // when
+        geofenceService.createNewFence(requestDto);
+
+        // then
+        User updatedUser = userRepository.findByNumber(TEST_NUMBER);
+        assertThat(updatedUser.getGeofences()).hasSize(initialCount + 1);
+
+        // Verify the new geofence
+        Geofence newGeofence = updatedUser.getGeofences().stream()
+                .filter(g -> "Test Location".equals(g.getName()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(newGeofence.getType()).isEqualTo(0);
+        assertThat(newGeofence.getMaxSequence()).isEqualTo(999);
+        assertThat(newGeofence.getUser()).isEqualTo(updatedUser);
+    }
+
+    @Test
+    @DisplayName("createNewFence - temporary geofence creation success")
+    void createNewFence_TemporaryGeofence_Success() {
+        // given
+        String startTime = "2025-10-21T10:00:00";
+        String endTime = "2025-10-21T18:00:00";
+
+        GeofenceRequestDto requestDto = new GeofenceRequestDto(
+                TEST_NUMBER,
+                "Temporary Event",
+                "서울시 강남구 역삼동",
+                1,  // temporary type
+                startTime,
+                endTime
+        );
+
+        int initialCount = testUser.getGeofences().size();
+
+        // when
+        geofenceService.createNewFence(requestDto);
+
+        // then
+        User updatedUser = userRepository.findByNumber(TEST_NUMBER);
+        assertThat(updatedUser.getGeofences()).hasSize(initialCount + 1);
+
+        // Verify the new temporary geofence
+        Geofence newGeofence = updatedUser.getGeofences().stream()
+                .filter(g -> "Temporary Event".equals(g.getName()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(newGeofence.getType()).isEqualTo(1);
+        assertThat(newGeofence.getMaxSequence()).isEqualTo(100);
+        assertThat(newGeofence.getStartTime()).isNotNull();
+        assertThat(newGeofence.getEndTime()).isNotNull();
     }
 }
