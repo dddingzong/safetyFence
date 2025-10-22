@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Getter
@@ -27,9 +28,9 @@ public class UserEvent {
     private LocalDate eventDate;
 
     @Column
-    private LocalDateTime startTime;
+    private LocalTime startTime;
 
-    public UserEvent(User user, String event, LocalDate eventDate, LocalDateTime startTime) {
+    public UserEvent(User user, String event, LocalDate eventDate, LocalTime startTime) {
         this.user = user;
         this.event = event;
         this.eventDate = eventDate;
