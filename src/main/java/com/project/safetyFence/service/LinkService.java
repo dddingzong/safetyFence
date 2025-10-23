@@ -2,7 +2,10 @@ package com.project.safetyFence.service;
 
 import com.project.safetyFence.domain.Link;
 import com.project.safetyFence.domain.User;
+import com.project.safetyFence.domain.dto.request.LinkRequestDto;
 import com.project.safetyFence.domain.dto.response.LinkResponseDto;
+import com.project.safetyFence.exception.CustomException;
+import com.project.safetyFence.exception.ErrorResult;
 import com.project.safetyFence.repository.LinkRepository;
 import com.project.safetyFence.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +34,37 @@ public class LinkService {
                         link.getRelation()
                 ))
                 .toList();
+    }
+
+    @Transactional
+    public void addLinkUser(String userNumber, LinkRequestDto linkRequestDto) {
+        User user = userRepository.findByNumber(userNumber);
+        String linkCode = linkRequestDto.getLinkCode();
+
+        // 1. targetUser null 체크
+        User targetUser = userRepository.findByLinkCode(linkCode);
+        if (targetUser == null) {
+            throw new CustomException(ErrorResult.LINK_CODE_NOT_EXIST);
+        }
+
+        // 2. 자기 자신 추가 방지
+        if (user.getNumber().equals(targetUser.getNumber())) {
+            throw new CustomException(ErrorResult.CANNOT_ADD_SELF_AS_LINK);
+        }
+
+        // 3. 중복 추가 방지 (이미 링크에 존재하는지 확인)
+        boolean alreadyExists = user.getLinks().stream()
+                .anyMatch(link -> link.getUserNumber().equals(targetUser.getNumber()));
+
+        if (alreadyExists) {
+            throw new CustomException(ErrorResult.LINK_ALREADY_EXISTS);
+        }
+
+        // 4. 링크 추가
+        Link link = new Link(user, targetUser.getNumber(), linkRequestDto.getRelation());
+        user.addLink(link);
+
+        userRepository.save(user);
     }
 
 }

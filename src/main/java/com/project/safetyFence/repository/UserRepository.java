@@ -11,6 +11,7 @@ public interface UserRepository extends JpaRepository<User, String>{
     boolean existsByLinkCode(String linkCode);
     User findByApiKey(String apiKey);
     boolean existsByApiKey(String apiKey);
+    User findByLinkCode(String linkCode);
 
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.links WHERE u.number = :number")
     User findByNumberWithLinks(@Param("number") String number);
