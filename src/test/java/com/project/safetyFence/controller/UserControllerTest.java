@@ -56,7 +56,10 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isOk())
-                .andExpect(content().string("login success"))
+                .andExpect(jsonPath("$.message").value("login success"))
+                .andExpect(jsonPath("$.apiKey").exists())
+                .andExpect(jsonPath("$.name").value("tester"))
+                .andExpect(jsonPath("$.number").value(TEST_NUMBER))
                 .andDo(print());
     }
 
@@ -73,7 +76,7 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isUnauthorized())
-                .andExpect(content().string("존재하지 않는 번호입니다."))
+                .andExpect(jsonPath("$.message").value("로그인 실패"))
                 .andDo(print());
     }
 
@@ -90,7 +93,7 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isUnauthorized())
-                .andExpect(content().string("비밀번호가 일치하지 않습니다."))
+                .andExpect(jsonPath("$.message").value("로그인 실패"))
                 .andDo(print());
     }
 
@@ -106,7 +109,7 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isUnauthorized())
-                .andExpect(content().string("존재하지 않는 번호입니다."))
+                .andExpect(jsonPath("$.message").value("로그인 실패"))
                 .andDo(print());
     }
 
@@ -122,7 +125,7 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isUnauthorized())
-                .andExpect(content().string("비밀번호가 일치하지 않습니다."))
+                .andExpect(jsonPath("$.message").value("로그인 실패"))
                 .andDo(print());
     }
 
@@ -138,6 +141,7 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("로그인 실패"))
                 .andDo(print());
     }
 }

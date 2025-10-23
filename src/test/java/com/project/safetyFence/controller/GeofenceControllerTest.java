@@ -5,7 +5,6 @@ import com.project.safetyFence.domain.Geofence;
 import com.project.safetyFence.domain.User;
 import com.project.safetyFence.domain.UserAddress;
 import com.project.safetyFence.domain.dto.request.FenceInRequestDto;
-import com.project.safetyFence.domain.dto.request.NumberRequestDto;
 import com.project.safetyFence.repository.GeofenceRepository;
 import com.project.safetyFence.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,11 +46,15 @@ class GeofenceControllerTest {
     private User testUser;
     private Geofence permanentGeofence;
     private Geofence temporaryGeofence;
+    private String testApiKey;
 
     @BeforeEach
     void setUp() {
-        // Test user
+        // Test user with API Key
         testUser = new User("01012345678", "tester", "password", LocalDate.now(), "test-link");
+        testApiKey = "test-api-key-12345678901234567890123456789012";
+        testUser.updateApiKey(testApiKey);
+
         UserAddress userAddress = new UserAddress(testUser, "서울", "부산", "서울시 강남구", "상세주소1", "부산시 해운대구");
         testUser.addUserAddress(userAddress);
 
@@ -90,14 +93,10 @@ class GeofenceControllerTest {
     @Test
     @DisplayName("사용자 번호로 지오펜스 목록 조회 API 테스트")
     void findGeofenceList() throws Exception {
-        // given
-        NumberRequestDto requestDto = new NumberRequestDto(testUser.getNumber());
-        String jsonRequest = objectMapper.writeValueAsString(requestDto);
-
         // when & then
         mockMvc.perform(post("/geofence/list")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonRequest))
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.length()").value(4))
@@ -113,11 +112,12 @@ class GeofenceControllerTest {
     void userFenceIn_PermanentGeofence_Success() throws Exception {
         // given
         int initialMaxSequence = permanentGeofence.getMaxSequence();
-        FenceInRequestDto requestDto = new FenceInRequestDto(permanentGeofence.getId(), testUser.getNumber());
+        FenceInRequestDto requestDto = new FenceInRequestDto(permanentGeofence.getId());
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
         // when & then
         mockMvc.perform(post("/geofence/userFenceIn")
+                        .header("X-API-Key", testApiKey)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isOk())
@@ -135,11 +135,12 @@ class GeofenceControllerTest {
     void userFenceIn_TemporaryGeofence_Deleted() throws Exception {
         // given
         Long temporaryGeofenceId = temporaryGeofence.getId();
-        FenceInRequestDto requestDto = new FenceInRequestDto(temporaryGeofenceId, testUser.getNumber());
+        FenceInRequestDto requestDto = new FenceInRequestDto(temporaryGeofenceId);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
         // when & then
         mockMvc.perform(post("/geofence/userFenceIn")
+                        .header("X-API-Key", testApiKey)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isOk())
@@ -155,21 +156,24 @@ class GeofenceControllerTest {
     void userFenceIn_MultipleEntries_DecreaseSequence() throws Exception {
         // given
         int initialMaxSequence = permanentGeofence.getMaxSequence();
-        FenceInRequestDto requestDto = new FenceInRequestDto(permanentGeofence.getId(), testUser.getNumber());
+        FenceInRequestDto requestDto = new FenceInRequestDto(permanentGeofence.getId());
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
         // when - enter 3 times
         mockMvc.perform(post("/geofence/userFenceIn")
+                        .header("X-API-Key", testApiKey)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isOk());
 
         mockMvc.perform(post("/geofence/userFenceIn")
+                        .header("X-API-Key", testApiKey)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isOk());
 
         mockMvc.perform(post("/geofence/userFenceIn")
+                        .header("X-API-Key", testApiKey)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isOk());

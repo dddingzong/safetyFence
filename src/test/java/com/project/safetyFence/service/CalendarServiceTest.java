@@ -46,7 +46,6 @@ class CalendarServiceTest {
     void addEvent_Success() {
         // given
         EventDataRequestDto requestDto = new EventDataRequestDto(
-                TEST_NUMBER,
                 "Meeting with client",
                 "2024-10-25",
                 "14:30"
@@ -55,7 +54,7 @@ class CalendarServiceTest {
         int initialEventCount = testUser.getUserEvents().size();
 
         // when
-        calendarService.addEvent(requestDto);
+        calendarService.addEvent(TEST_NUMBER, requestDto);
 
         // then
         User updatedUser = userRepository.findByNumber(TEST_NUMBER);
@@ -73,30 +72,27 @@ class CalendarServiceTest {
     void addEvent_MultipleEvents_Success() {
         // given
         EventDataRequestDto event1 = new EventDataRequestDto(
-                TEST_NUMBER,
                 "Morning Meeting",
                 "2024-10-25",
                 "09:00"
         );
 
         EventDataRequestDto event2 = new EventDataRequestDto(
-                TEST_NUMBER,
                 "Lunch Appointment",
                 "2024-10-25",
                 "12:30"
         );
 
         EventDataRequestDto event3 = new EventDataRequestDto(
-                TEST_NUMBER,
                 "Evening Conference",
                 "2024-10-26",
                 "18:00"
         );
 
         // when
-        calendarService.addEvent(event1);
-        calendarService.addEvent(event2);
-        calendarService.addEvent(event3);
+        calendarService.addEvent(TEST_NUMBER, event1);
+        calendarService.addEvent(TEST_NUMBER, event2);
+        calendarService.addEvent(TEST_NUMBER, event3);
 
         // then
         User updatedUser = userRepository.findByNumber(TEST_NUMBER);
@@ -112,14 +108,13 @@ class CalendarServiceTest {
     void addEvent_MaintainsBidirectionalRelationship() {
         // given
         EventDataRequestDto requestDto = new EventDataRequestDto(
-                TEST_NUMBER,
                 "Team Building",
                 "2024-11-01",
                 "10:00"
         );
 
         // when
-        calendarService.addEvent(requestDto);
+        calendarService.addEvent(TEST_NUMBER, requestDto);
 
         // then
         User updatedUser = userRepository.findByNumber(TEST_NUMBER);
@@ -135,14 +130,13 @@ class CalendarServiceTest {
     void addEvent_DifferentDates_Success() {
         // given
         EventDataRequestDto requestDto = new EventDataRequestDto(
-                TEST_NUMBER,
                 "New Year Event",
                 "2025-01-01",
                 "00:00"
         );
 
         // when
-        calendarService.addEvent(requestDto);
+        calendarService.addEvent(TEST_NUMBER, requestDto);
 
         // then
         User updatedUser = userRepository.findByNumber(TEST_NUMBER);
@@ -157,14 +151,13 @@ class CalendarServiceTest {
     void addEvent_DataPersistence() {
         // given
         EventDataRequestDto requestDto = new EventDataRequestDto(
-                TEST_NUMBER,
                 "Persistent Event",
                 "2024-12-25",
                 "15:00"
         );
 
         // when
-        calendarService.addEvent(requestDto);
+        calendarService.addEvent(TEST_NUMBER, requestDto);
 
         // then - first retrieval
         User user1 = userRepository.findByNumber(TEST_NUMBER);
@@ -181,12 +174,11 @@ class CalendarServiceTest {
     void deleteEvent_Success() {
         // given - add event first
         EventDataRequestDto requestDto = new EventDataRequestDto(
-                TEST_NUMBER,
                 "Event to Delete",
                 "2024-11-01",
                 "10:00"
         );
-        calendarService.addEvent(requestDto);
+        calendarService.addEvent(TEST_NUMBER, requestDto);
 
         User user = userRepository.findByNumber(TEST_NUMBER);
         Long eventId = user.getUserEvents().get(0).getId();
@@ -202,9 +194,9 @@ class CalendarServiceTest {
     @DisplayName("deleteEvent - only deletes specified event from database")
     void deleteEvent_DeletesOnlySpecifiedEvent() {
         // given - add multiple events
-        calendarService.addEvent(new EventDataRequestDto(TEST_NUMBER, "Event 1", "2024-11-01", "10:00"));
-        calendarService.addEvent(new EventDataRequestDto(TEST_NUMBER, "Event 2", "2024-11-02", "11:00"));
-        calendarService.addEvent(new EventDataRequestDto(TEST_NUMBER, "Event 3", "2024-11-03", "12:00"));
+        calendarService.addEvent(TEST_NUMBER, new EventDataRequestDto("Event 1", "2024-11-01", "10:00"));
+        calendarService.addEvent(TEST_NUMBER, new EventDataRequestDto("Event 2", "2024-11-02", "11:00"));
+        calendarService.addEvent(TEST_NUMBER, new EventDataRequestDto("Event 3", "2024-11-03", "12:00"));
 
         User user = userRepository.findByNumber(TEST_NUMBER);
         Long eventId1 = user.getUserEvents().get(0).getId();

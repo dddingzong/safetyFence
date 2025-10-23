@@ -2,7 +2,6 @@ package com.project.safetyFence.service;
 
 import com.project.safetyFence.domain.Log;
 import com.project.safetyFence.domain.User;
-import com.project.safetyFence.domain.dto.request.NumberRequestDto;
 import com.project.safetyFence.domain.dto.response.LogResponseDto;
 import com.project.safetyFence.repository.UserRepository;
 
@@ -79,10 +78,10 @@ class LogServiceTest {
     @DisplayName("getLogsByUserNumber - returns all logs for existing user")
     void getLogsByUserNumber_ExistingUser_ReturnsAllLogs() {
         // given
-        NumberRequestDto requestDto = new NumberRequestDto(TEST_NUMBER);
+        String userNumber = TEST_NUMBER;
 
         // when
-        List<LogResponseDto> result = logService.getLogsByUserNumber(requestDto);
+        List<LogResponseDto> result = logService.getLogsByUserNumber(userNumber);
 
         // then
         assertThat(result).hasSize(3);
@@ -100,10 +99,10 @@ class LogServiceTest {
     @DisplayName("getLogsByUserNumber - returns empty list for user with no logs")
     void getLogsByUserNumber_UserWithNoLogs_ReturnsEmptyList() {
         // given
-        NumberRequestDto requestDto = new NumberRequestDto(TEST_NUMBER_NO_LOGS);
+        String userNumber = TEST_NUMBER_NO_LOGS;
 
         // when
-        List<LogResponseDto> result = logService.getLogsByUserNumber(requestDto);
+        List<LogResponseDto> result = logService.getLogsByUserNumber(userNumber);
 
         // then
         assertThat(result).isEmpty();
@@ -113,10 +112,10 @@ class LogServiceTest {
     @DisplayName("getLogsByUserNumber - response contains correct log details")
     void getLogsByUserNumber_ReturnsCorrectLogDetails() {
         // given
-        NumberRequestDto requestDto = new NumberRequestDto(TEST_NUMBER);
+        String userNumber = TEST_NUMBER;
 
         // when
-        List<LogResponseDto> result = logService.getLogsByUserNumber(requestDto);
+        List<LogResponseDto> result = logService.getLogsByUserNumber(userNumber);
 
         // then
         LogResponseDto firstLog = result.stream()
@@ -135,10 +134,10 @@ class LogServiceTest {
     @DisplayName("getLogsByUserNumber - verify all logs have valid arrive times")
     void getLogsByUserNumber_AllLogsHaveValidArriveTimes() {
         // given
-        NumberRequestDto requestDto = new NumberRequestDto(TEST_NUMBER);
+        String userNumber = TEST_NUMBER;
 
         // when
-        List<LogResponseDto> result = logService.getLogsByUserNumber(requestDto);
+        List<LogResponseDto> result = logService.getLogsByUserNumber(userNumber);
 
         // then
         assertThat(result).allMatch(log -> log.getArriveTime() != null && !log.getArriveTime().isEmpty());
@@ -148,11 +147,11 @@ class LogServiceTest {
     @DisplayName("getLogsByUserNumber - maintains data integrity after multiple calls")
     void getLogsByUserNumber_MultipleCallsMaintainDataIntegrity() {
         // given
-        NumberRequestDto requestDto = new NumberRequestDto(TEST_NUMBER);
+        String userNumber = TEST_NUMBER;
 
         // when - call multiple times
-        List<LogResponseDto> result1 = logService.getLogsByUserNumber(requestDto);
-        List<LogResponseDto> result2 = logService.getLogsByUserNumber(requestDto);
+        List<LogResponseDto> result1 = logService.getLogsByUserNumber(userNumber);
+        List<LogResponseDto> result2 = logService.getLogsByUserNumber(userNumber);
 
         // then - both results should be identical
         assertThat(result1).hasSize(result2.size());

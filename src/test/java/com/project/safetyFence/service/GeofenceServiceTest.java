@@ -2,7 +2,6 @@ package com.project.safetyFence.service;
 
 import com.project.safetyFence.domain.Geofence;
 import com.project.safetyFence.domain.User;
-import com.project.safetyFence.domain.dto.request.FenceInRequestDto;
 import com.project.safetyFence.domain.dto.request.GeofenceRequestDto;
 import com.project.safetyFence.repository.GeofenceRepository;
 import com.project.safetyFence.repository.UserRepository;
@@ -78,10 +77,10 @@ class GeofenceServiceTest {
     void userFenceIn_PermanentGeofence_DecreasesMaxSequence() {
         // given
         int initialMaxSequence = permanentGeofence.getMaxSequence();
-        FenceInRequestDto requestDto = new FenceInRequestDto(permanentGeofence.getId(), TEST_NUMBER);
+        Long geofenceId = permanentGeofence.getId();
 
         // when
-        geofenceService.userFenceIn(requestDto);
+        geofenceService.userFenceIn(TEST_NUMBER, geofenceId);
 
         // then
         Geofence updated = geofenceRepository.findById(permanentGeofence.getId())
@@ -103,10 +102,10 @@ class GeofenceServiceTest {
                 0
         );
         geofenceRepository.save(zeroSequenceGeofence);
-        FenceInRequestDto requestDto = new FenceInRequestDto(zeroSequenceGeofence.getId(), TEST_NUMBER);
+        Long geofenceId = zeroSequenceGeofence.getId();
 
         // when
-        geofenceService.userFenceIn(requestDto);
+        geofenceService.userFenceIn(TEST_NUMBER, geofenceId);
 
         // then
         Geofence updated = geofenceRepository.findById(zeroSequenceGeofence.getId())
@@ -119,10 +118,9 @@ class GeofenceServiceTest {
     void userFenceIn_TemporaryGeofence_IsDeleted() {
         // given
         Long temporaryGeofenceId = temporaryGeofence.getId();
-        FenceInRequestDto requestDto = new FenceInRequestDto(temporaryGeofenceId, TEST_NUMBER);
 
         // when
-        geofenceService.userFenceIn(requestDto);
+        geofenceService.userFenceIn(TEST_NUMBER, temporaryGeofenceId);
 
         // then
         assertThat(geofenceRepository.findById(temporaryGeofenceId)).isEmpty();
@@ -133,10 +131,9 @@ class GeofenceServiceTest {
     void userFenceIn_GeofenceNotFound_ThrowsException() {
         // given
         Long nonExistentGeofenceId = 999999L;
-        FenceInRequestDto requestDto = new FenceInRequestDto(nonExistentGeofenceId, TEST_NUMBER);
 
         // when & then
-        assertThatThrownBy(() -> geofenceService.userFenceIn(requestDto))
+        assertThatThrownBy(() -> geofenceService.userFenceIn(TEST_NUMBER, nonExistentGeofenceId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Geofence not found");
     }
@@ -145,13 +142,13 @@ class GeofenceServiceTest {
     @DisplayName("userFenceIn - multiple entries decrease maxSequence correctly")
     void userFenceIn_MultipleEntries_DecreasesCorrectly() {
         // given
-        FenceInRequestDto requestDto = new FenceInRequestDto(permanentGeofence.getId(), TEST_NUMBER);
+        Long geofenceId = permanentGeofence.getId();
         int initialMaxSequence = permanentGeofence.getMaxSequence();
 
         // when - enter 3 times
-        geofenceService.userFenceIn(requestDto);
-        geofenceService.userFenceIn(requestDto);
-        geofenceService.userFenceIn(requestDto);
+        geofenceService.userFenceIn(TEST_NUMBER, geofenceId);
+        geofenceService.userFenceIn(TEST_NUMBER, geofenceId);
+        geofenceService.userFenceIn(TEST_NUMBER, geofenceId);
 
         // then
         Geofence updated = geofenceRepository.findById(permanentGeofence.getId())
@@ -164,7 +161,6 @@ class GeofenceServiceTest {
     void createNewFence_PermanentGeofence_Success() {
         // given
         GeofenceRequestDto requestDto = new GeofenceRequestDto(
-                TEST_NUMBER,
                 "Test Location",
                 "서울시 강남구 테헤란로 152",
                 0,  // permanent type
@@ -175,7 +171,7 @@ class GeofenceServiceTest {
         int initialCount = testUser.getGeofences().size();
 
         // when
-        geofenceService.createNewFence(requestDto);
+        geofenceService.createNewFence(TEST_NUMBER, requestDto);
 
         // then
         User updatedUser = userRepository.findByNumber(TEST_NUMBER);
@@ -200,7 +196,6 @@ class GeofenceServiceTest {
         String endTime = "2025-10-21T18:00:00";
 
         GeofenceRequestDto requestDto = new GeofenceRequestDto(
-                TEST_NUMBER,
                 "Temporary Event",
                 "서울시 강남구 역삼동",
                 1,  // temporary type
@@ -211,7 +206,7 @@ class GeofenceServiceTest {
         int initialCount = testUser.getGeofences().size();
 
         // when
-        geofenceService.createNewFence(requestDto);
+        geofenceService.createNewFence(TEST_NUMBER, requestDto);
 
         // then
         User updatedUser = userRepository.findByNumber(TEST_NUMBER);
