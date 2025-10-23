@@ -25,11 +25,16 @@ public class CalendarController {
         return ResponseEntity.ok(null);
     }
 
-
     @PostMapping("claendar/addEvent")
     public ResponseEntity<String> addEvent(@RequestBody EventDataRequestDto eventDataRequestDto) {
         calendarService.addEvent(eventDataRequestDto);
         return ResponseEntity.ok("Event added");
+    }
+
+    @DeleteMapping("calendar/deleteEvent")
+    public ResponseEntity<String> deleteEvent(@RequestParam Long eventId) {
+        calendarService.deleteEvent(eventId);
+        return ResponseEntity.ok("Event deleted");
     }
 
 

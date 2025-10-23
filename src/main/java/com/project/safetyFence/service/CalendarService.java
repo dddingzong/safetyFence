@@ -3,9 +3,12 @@ package com.project.safetyFence.service;
 import com.project.safetyFence.domain.User;
 import com.project.safetyFence.domain.UserEvent;
 import com.project.safetyFence.domain.dto.request.EventDataRequestDto;
+import com.project.safetyFence.repository.UserEventRepository;
 import com.project.safetyFence.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -15,7 +18,9 @@ import java.time.LocalTime;
 public class CalendarService {
 
     private final UserRepository userRepository;
+    private final UserEventRepository userEventRepository;
 
+    @Transactional
     public void addEvent(EventDataRequestDto eventDataRequestDto) {
         String number = eventDataRequestDto.getNumber();
 
@@ -35,4 +40,10 @@ public class CalendarService {
         userRepository.save(user);
     }
 
+    @Transactional
+    @Modifying
+    public void deleteEvent(Long eventId) {
+        UserEvent userEvent = userEventRepository.findById(eventId).get();
+        userEventRepository.delete(userEvent);
+    }
 }
