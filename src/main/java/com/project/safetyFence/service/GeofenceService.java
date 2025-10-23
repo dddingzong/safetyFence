@@ -104,4 +104,12 @@ public class GeofenceService {
         geofenceRepository.save(geofence);
     }
 
+    @Transactional
+    public void deleteFence(Long geofenceId) {
+        Geofence geofence = geofenceRepository.findById(geofenceId)
+                .orElseThrow(() -> new IllegalArgumentException("Geofence not found"));
+
+        geofenceRepository.delete(geofence);
+    }
+
 }
