@@ -1,7 +1,9 @@
 package com.project.safetyFence.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.safetyFence.domain.Link;
 import com.project.safetyFence.domain.User;
+import com.project.safetyFence.domain.dto.request.LinkRequestDto;
 import com.project.safetyFence.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -26,6 +30,9 @@ class LinkControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private UserRepository userRepository;
@@ -136,6 +143,187 @@ class LinkControllerTest {
                 .andExpect(jsonPath("$[?(@.userNumber == '01011111111')]").exists())
                 .andExpect(jsonPath("$[?(@.userNumber == '01022222222')]").exists())
                 .andExpect(jsonPath("$[?(@.userNumber == '01033333333')]").exists())
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("addLinkUser - 링크 추가 성공")
+    void addLinkUser_Success() throws Exception {
+        // given - 타겟 사용자 생성
+        User targetUser = new User("01099999999", "김철수", "password", LocalDate.of(1985, 3, 20), "target-link-code");
+        targetUser.updateApiKey("target-api-key-123456789012345678901234");
+        userRepository.save(targetUser);
+
+        LinkRequestDto requestDto = new LinkRequestDto("target-link-code", "친구");
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        int initialLinkCount = testUser.getLinks().size();
+
+        // when & then
+        mockMvc.perform(post("/link/addUser")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Link user added successfully"))
+                .andDo(print());
+
+        // Verify link was added
+        User updatedUser = userRepository.findByNumberWithLinks(TEST_NUMBER);
+        assertThat(updatedUser.getLinks()).hasSize(initialLinkCount + 1);
+
+        // Verify link details
+        Link addedLink = updatedUser.getLinks().stream()
+                .filter(link -> "01099999999".equals(link.getUserNumber()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(addedLink.getRelation()).isEqualTo("친구");
+    }
+
+    @Test
+    @DisplayName("addLinkUser - 링크 추가 후 DB 검증")
+    void addLinkUser_VerifyDatabasePersistence() throws Exception {
+        // given
+        User targetUser = new User("01088888888", "이영희", "password", LocalDate.of(1992, 7, 10), "target2-link-code");
+        userRepository.save(targetUser);
+
+        LinkRequestDto requestDto = new LinkRequestDto("target2-link-code", "가족");
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        // when
+        mockMvc.perform(post("/link/addUser")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isOk());
+
+        // then - 데이터베이스에서 직접 확인
+        User user = userRepository.findByNumberWithLinks(TEST_NUMBER);
+        assertThat(user.getLinks()).anyMatch(link ->
+                "01088888888".equals(link.getUserNumber()) &&
+                        "가족".equals(link.getRelation())
+        );
+    }
+
+    @Test
+    @DisplayName("addLinkUser - API Key 없이 요청 시 401 에러")
+    void addLinkUser_NoApiKey_Unauthorized() throws Exception {
+        // given
+        LinkRequestDto requestDto = new LinkRequestDto("some-link-code", "친구");
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        // when & then
+        mockMvc.perform(post("/link/addUser")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isUnauthorized())
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("addLinkUser - 잘못된 API Key로 요청 시 401 에러")
+    void addLinkUser_InvalidApiKey_Unauthorized() throws Exception {
+        // given
+        LinkRequestDto requestDto = new LinkRequestDto("some-link-code", "친구");
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        // when & then
+        mockMvc.perform(post("/link/addUser")
+                        .header("X-API-Key", "invalid-api-key-12345")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isUnauthorized())
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("addLinkUser - 여러 링크 추가")
+    void addLinkUser_MultipleLinks() throws Exception {
+        // given
+        User target1 = new User("01077777777", "박민수", "password", LocalDate.of(1988, 1, 15), "link-code-1");
+        User target2 = new User("01066666666", "정수진", "password", LocalDate.of(1991, 9, 25), "link-code-2");
+        userRepository.save(target1);
+        userRepository.save(target2);
+
+        // when - add first link
+        mockMvc.perform(post("/link/addUser")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LinkRequestDto("link-code-1", "동료"))))
+                .andExpect(status().isOk());
+
+        // when - add second link
+        mockMvc.perform(post("/link/addUser")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LinkRequestDto("link-code-2", "친구"))))
+                .andExpect(status().isOk());
+
+        // then - verify both links added
+        User updatedUser = userRepository.findByNumberWithLinks(TEST_NUMBER);
+        assertThat(updatedUser.getLinks()).hasSize(5); // 초기 3개 + 새로 추가한 2개
+        assertThat(updatedUser.getLinks()).anyMatch(link -> "01077777777".equals(link.getUserNumber()));
+        assertThat(updatedUser.getLinks()).anyMatch(link -> "01066666666".equals(link.getUserNumber()));
+    }
+
+    @Test
+    @DisplayName("addLinkUser - 존재하지 않는 linkCode로 추가 시 에러")
+    void addLinkUser_NonExistentLinkCode_ThrowsException() throws Exception {
+        // given
+        LinkRequestDto requestDto = new LinkRequestDto("non-existent-code", "친구");
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        // when & then
+        mockMvc.perform(post("/link/addUser")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("일치하는 유저 코드가 존재하지 않습니다."))
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("addLinkUser - 자기 자신 추가 시 에러")
+    void addLinkUser_AddSelf_ThrowsException() throws Exception {
+        // given - 자신의 linkCode 사용
+        LinkRequestDto requestDto = new LinkRequestDto("test-link-code", "나");
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        // when & then
+        mockMvc.perform(post("/link/addUser")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("자기 자신을 링크로 추가할 수 없습니다."))
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("addLinkUser - 중복 추가 시 에러")
+    void addLinkUser_DuplicateAdd_ThrowsException() throws Exception {
+        // given - 타겟 사용자 생성
+        User targetUser = new User("01055555555", "최민지", "password", LocalDate.of(1993, 11, 5), "duplicate-test-code");
+        userRepository.save(targetUser);
+
+        LinkRequestDto requestDto = new LinkRequestDto("duplicate-test-code", "친구");
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        // when - 첫 번째 추가 (성공)
+        mockMvc.perform(post("/link/addUser")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isOk());
+
+        // then - 두 번째 추가 시도 (실패)
+        mockMvc.perform(post("/link/addUser")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("이미 링크에 추가된 사용자입니다."))
                 .andDo(print());
     }
 }
