@@ -5,6 +5,7 @@ import com.project.safetyFence.domain.Geofence;
 import com.project.safetyFence.domain.User;
 import com.project.safetyFence.domain.UserAddress;
 import com.project.safetyFence.domain.dto.request.FenceInRequestDto;
+import com.project.safetyFence.domain.dto.request.GeofenceDeleteRequestDto;
 import com.project.safetyFence.repository.GeofenceRepository;
 import com.project.safetyFence.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -182,5 +184,104 @@ class GeofenceControllerTest {
         Geofence updated = geofenceRepository.findById(permanentGeofence.getId())
                 .orElseThrow();
         assertThat(updated.getMaxSequence()).isEqualTo(initialMaxSequence - 3);
+    }
+
+    @Test
+    @DisplayName("deleteFence - 지오펜스 삭제 성공")
+    void deleteFence_Success() throws Exception {
+        // given
+        Long geofenceId = permanentGeofence.getId();
+        GeofenceDeleteRequestDto requestDto = new GeofenceDeleteRequestDto(geofenceId);
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        // when & then
+        mockMvc.perform(delete("/geofence/deleteFence")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isOk())
+                .andExpect(content().string("지오펜스가 성공적으로 삭제되었습니다."))
+                .andDo(print());
+
+        // Verify geofence was deleted from database
+        assertThat(geofenceRepository.findById(geofenceId)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("deleteFence - 삭제 후 데이터베이스에서 실제로 제거 확인")
+    void deleteFence_VerifyDatabaseDeletion() throws Exception {
+        // given
+        Long geofenceId = temporaryGeofence.getId();
+        GeofenceDeleteRequestDto requestDto = new GeofenceDeleteRequestDto(geofenceId);
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        // when
+        mockMvc.perform(delete("/geofence/deleteFence")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isOk());
+
+        // then - verify deleted from database
+        assertThat(geofenceRepository.findById(geofenceId)).isEmpty();
+        assertThat(geofenceRepository.findAll()).hasSize(3); // 4개 중 1개 삭제
+    }
+
+    @Test
+    @DisplayName("deleteFence - API Key 없이 요청 시 401 에러")
+    void deleteFence_NoApiKey_Unauthorized() throws Exception {
+        // given
+        GeofenceDeleteRequestDto requestDto = new GeofenceDeleteRequestDto(permanentGeofence.getId());
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        // when & then
+        mockMvc.perform(delete("/geofence/deleteFence")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isUnauthorized())
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("deleteFence - 잘못된 API Key로 요청 시 401 에러")
+    void deleteFence_InvalidApiKey_Unauthorized() throws Exception {
+        // given
+        GeofenceDeleteRequestDto requestDto = new GeofenceDeleteRequestDto(permanentGeofence.getId());
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        // when & then
+        mockMvc.perform(delete("/geofence/deleteFence")
+                        .header("X-API-Key", "invalid-api-key-12345")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isUnauthorized())
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("deleteFence - 여러 지오펜스 순차 삭제")
+    void deleteFence_MultipleDeletes() throws Exception {
+        // given
+        Long id1 = permanentGeofence.getId();
+        Long id2 = temporaryGeofence.getId();
+
+        // when - delete first geofence
+        mockMvc.perform(delete("/geofence/deleteFence")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new GeofenceDeleteRequestDto(id1))))
+                .andExpect(status().isOk());
+
+        // when - delete second geofence
+        mockMvc.perform(delete("/geofence/deleteFence")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new GeofenceDeleteRequestDto(id2))))
+                .andExpect(status().isOk());
+
+        // then - verify both deleted
+        assertThat(geofenceRepository.findById(id1)).isEmpty();
+        assertThat(geofenceRepository.findById(id2)).isEmpty();
+        assertThat(geofenceRepository.findAll()).hasSize(2); // 4개 중 2개 삭제
     }
 }
