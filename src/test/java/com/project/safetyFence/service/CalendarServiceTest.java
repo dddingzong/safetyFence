@@ -3,6 +3,7 @@ package com.project.safetyFence.service;
 import com.project.safetyFence.domain.User;
 import com.project.safetyFence.domain.UserEvent;
 import com.project.safetyFence.domain.dto.request.EventDataRequestDto;
+import com.project.safetyFence.repository.UserEventRepository;
 import com.project.safetyFence.repository.UserRepository;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +26,9 @@ class CalendarServiceTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserEventRepository userEventRepository;
 
     private User testUser;
 
@@ -170,5 +174,49 @@ class CalendarServiceTest {
         User user2 = userRepository.findByNumber(TEST_NUMBER);
         assertThat(user2.getUserEvents()).hasSize(1);
         assertThat(user2.getUserEvents().get(0).getEvent()).isEqualTo("Persistent Event");
+    }
+
+    @Test
+    @DisplayName("deleteEvent - successfully deletes event from database")
+    void deleteEvent_Success() {
+        // given - add event first
+        EventDataRequestDto requestDto = new EventDataRequestDto(
+                TEST_NUMBER,
+                "Event to Delete",
+                "2024-11-01",
+                "10:00"
+        );
+        calendarService.addEvent(requestDto);
+
+        User user = userRepository.findByNumber(TEST_NUMBER);
+        Long eventId = user.getUserEvents().get(0).getId();
+
+        // when
+        calendarService.deleteEvent(eventId);
+
+        // then - verify deleted from database
+        assertThat(userEventRepository.findById(eventId)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("deleteEvent - only deletes specified event from database")
+    void deleteEvent_DeletesOnlySpecifiedEvent() {
+        // given - add multiple events
+        calendarService.addEvent(new EventDataRequestDto(TEST_NUMBER, "Event 1", "2024-11-01", "10:00"));
+        calendarService.addEvent(new EventDataRequestDto(TEST_NUMBER, "Event 2", "2024-11-02", "11:00"));
+        calendarService.addEvent(new EventDataRequestDto(TEST_NUMBER, "Event 3", "2024-11-03", "12:00"));
+
+        User user = userRepository.findByNumber(TEST_NUMBER);
+        Long eventId1 = user.getUserEvents().get(0).getId();
+        Long eventId2 = user.getUserEvents().get(1).getId();
+        Long eventId3 = user.getUserEvents().get(2).getId();
+
+        // when - delete middle event
+        calendarService.deleteEvent(eventId2);
+
+        // then - verify only event2 is deleted from database
+        assertThat(userEventRepository.findById(eventId1)).isPresent();
+        assertThat(userEventRepository.findById(eventId2)).isEmpty();
+        assertThat(userEventRepository.findById(eventId3)).isPresent();
     }
 }
