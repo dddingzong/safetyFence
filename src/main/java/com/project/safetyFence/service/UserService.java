@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -85,6 +86,36 @@ public class UserService {
             linkCode = linkCodeGenerator.generate();
         }
         return linkCode;
+    }
+
+    // API Key 생성 및 저장
+    @Transactional
+    public String generateAndSaveApiKey(String userNumber) {
+        User user = userRepository.findByNumber(userNumber);
+
+        // 안전한 API Key 생성
+        String apiKey = generateSecureApiKey();
+
+        // 중복 체크
+        while (userRepository.existsByApiKey(apiKey)) {
+            apiKey = generateSecureApiKey();
+        }
+
+        user.updateApiKey(apiKey);
+        userRepository.save(user);
+
+        return apiKey;
+    }
+
+    // API Key로 사용자 번호 조회
+    public String findUserNumberByApiKey(String apiKey) {
+        User user = userRepository.findByApiKey(apiKey);
+        return user != null ? user.getNumber() : null;
+    }
+
+    // 안전한 API Key 생성 (UUID 사용)
+    private String generateSecureApiKey() {
+        return UUID.randomUUID().toString().replace("-", "");
     }
 
 }

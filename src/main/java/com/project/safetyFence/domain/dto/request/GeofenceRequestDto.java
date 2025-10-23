@@ -4,15 +4,13 @@ import lombok.Getter;
 
 @Getter
 public class GeofenceRequestDto {
-    private String number;
     private String name;
     private String address;
     private int type;
     private String startTime;
     private String endTime;
 
-    public GeofenceRequestDto(String number, String name, String address, int type, String startTime, String endTime) {
-        this.number = number;
+    public GeofenceRequestDto(String name, String address, int type, String startTime, String endTime) {
         this.name = name;
         this.address = address;
         this.type = type;

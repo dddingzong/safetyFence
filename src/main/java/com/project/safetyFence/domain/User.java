@@ -30,6 +30,9 @@ public class User {
     @Column(nullable = false)
     private String linkCode;
 
+    @Column(unique = true, length = 64)
+    private String apiKey;
+
     // 1:1 양방향 관계 - UserAddress
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private UserAddress userAddress;
@@ -112,6 +115,11 @@ public class User {
         if (userEvent.getUser() != this) {
             userEvent.registerUser(this);
         }
+    }
+
+    // API Key 설정 메서드
+    public void updateApiKey(String apiKey) {
+        this.apiKey = apiKey;
     }
 
 }

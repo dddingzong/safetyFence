@@ -52,17 +52,17 @@ public class GeofenceService {
         return geofence;
     }
 
-    @Transactional
-    public List<Geofence> findGeofenceByNumber(NumberRequestDto numberRequestDto) {
-        User user = userRepository.findByNumber(numberRequestDto.getNumber());
+    @Transactional(readOnly = true)
+    public List<Geofence> findGeofenceByNumber(String userNumber) {
+        User user = userRepository.findByNumber(userNumber);
         List<Geofence> geofences = geofenceRepository.findByUser(user);
         return geofences;
     }
 
     @Transactional
-    public void userFenceIn(FenceInRequestDto fenceInRequestDto) {
-        User user = userRepository.findByNumber(fenceInRequestDto.getNumber());
-        Geofence geofence = geofenceRepository.findById(fenceInRequestDto.getGeofenceId())
+    public void userFenceIn(String userNumber, Long geofenceId) {
+        User user = userRepository.findByNumber(userNumber);
+        Geofence geofence = geofenceRepository.findById(geofenceId)
                 .orElseThrow(() -> new IllegalArgumentException("Geofence not found"));
 
         // 일회성이면 삭제
@@ -83,8 +83,8 @@ public class GeofenceService {
     }
 
     @Transactional
-    public void createNewFence(GeofenceRequestDto geofenceRequestDto) {
-        User user = userRepository.findByNumber(geofenceRequestDto.getNumber());
+    public void createNewFence(String userNumber, GeofenceRequestDto geofenceRequestDto) {
+        User user = userRepository.findByNumber(userNumber);
         String address = geofenceRequestDto.getAddress();
         DocumentDto document = kakaoApiService.requestAddressSearch(address);
 

@@ -25,22 +25,36 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/user/signIn")
-    public ResponseEntity<String> signIn(@RequestBody SignInRequestDto signInRequestDto) {
+    public ResponseEntity<Map<String, Object>> signIn(@RequestBody SignInRequestDto signInRequestDto) {
         String number = signInRequestDto.getNumber();
         String password = signInRequestDto.getPassword();
 
         if (!userService.checkExistNumber(number)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("존재하지 않는 번호입니다.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("message", "로그인 실패"));
         }
 
         User user = userService.findByNumber(number);
         String userPassword = user.getPassword();
 
         if (!userPassword.equals(password)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("비밀번호가 일치하지 않습니다.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("message", "로그인 실패"));
         }
 
-        return ResponseEntity.ok("login success");
+        // API Key 발급 (이미 있으면 재사용, 없으면 새로 생성)
+        String apiKey = user.getApiKey();
+        if (apiKey == null || apiKey.isEmpty()) {
+            apiKey = userService.generateAndSaveApiKey(user.getNumber());
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "login success");
+        response.put("apiKey", apiKey);
+        response.put("name", user.getName());
+        response.put("number", user.getNumber());
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/user/signup")

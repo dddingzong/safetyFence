@@ -6,7 +6,6 @@ import com.project.safetyFence.domain.dto.request.EventDataRequestDto;
 import com.project.safetyFence.repository.UserEventRepository;
 import com.project.safetyFence.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,10 +20,8 @@ public class CalendarService {
     private final UserEventRepository userEventRepository;
 
     @Transactional
-    public void addEvent(EventDataRequestDto eventDataRequestDto) {
-        String number = eventDataRequestDto.getNumber();
-
-        User user = userRepository.findByNumber(number);
+    public void addEvent(String userNumber, EventDataRequestDto eventDataRequestDto) {
+        User user = userRepository.findByNumber(userNumber);
 
         String event = eventDataRequestDto.getEvent();
         String eventDate = eventDataRequestDto.getEventDate(); // "2024-10-22" 형태
@@ -41,9 +38,9 @@ public class CalendarService {
     }
 
     @Transactional
-    @Modifying
     public void deleteEvent(Long eventId) {
-        UserEvent userEvent = userEventRepository.findById(eventId).get();
+        UserEvent userEvent = userEventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
         userEventRepository.delete(userEvent);
     }
 }

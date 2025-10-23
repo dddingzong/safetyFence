@@ -19,10 +19,9 @@ public class LogService {
     private final LogRepository logRepository;
     private final UserRepository userRepository;
 
-    public List<LogResponseDto> getLogsByUserNumber(NumberRequestDto numberRequestDto) {
+    public List<LogResponseDto> getLogsByUserNumber(String number) {
         List<LogResponseDto> responseDtos = new ArrayList<>();
 
-        String number = numberRequestDto.getNumber();
         User user = userRepository.findByNumber(number);
 
         List<Log> logs = logRepository.findByUser(user);

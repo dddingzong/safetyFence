@@ -1,14 +1,14 @@
 package com.project.safetyFence.domain.dto.request;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
+@NoArgsConstructor
 public class FenceInRequestDto {
     private Long geofenceId;
-    private String number;
 
-    public FenceInRequestDto(Long geofenceId, String number) {
+    public FenceInRequestDto(Long geofenceId) {
         this.geofenceId = geofenceId;
-        this.number = number;
     }
 }
