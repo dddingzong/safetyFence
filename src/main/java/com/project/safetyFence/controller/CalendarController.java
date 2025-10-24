@@ -17,7 +17,7 @@ public class CalendarController {
     private final CalendarService calendarService;
 
     @GetMapping("/calendar/userData")
-    public ResponseEntity<List<OneDayResponseDto>> getUserData(HttpServletRequest request) {
+    public ResponseEntity<List<OneDayResponseDto>> getCalendarData(HttpServletRequest request) {
         String userNumber = (String) request.getAttribute("userNumber");
         List<OneDayResponseDto> calendarData = calendarService.getCalendarData(userNumber);
         return ResponseEntity.ok(calendarData);
