@@ -23,8 +23,7 @@ public interface UserRepository extends JpaRepository<User, String>{
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.geofences WHERE u.number = :number")
     User findByNumberWithGeofences(@Param("number") String number);
 
-    @EntityGraph(attributePaths = {"logs", "geofences", "userEvents"})
-    @Query("SELECT u FROM User u WHERE u.number = :number")
+    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.logs WHERE u.number = :number")
     User findByNumberWithCalendarData(@Param("number") String number);
 
 }
