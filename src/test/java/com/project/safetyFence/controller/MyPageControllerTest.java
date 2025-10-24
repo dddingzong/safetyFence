@@ -1,9 +1,14 @@
 package com.project.safetyFence.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.safetyFence.domain.Geofence;
 import com.project.safetyFence.domain.User;
 import com.project.safetyFence.domain.UserAddress;
+import com.project.safetyFence.domain.dto.request.CenterAddressUpdateRequestDto;
+import com.project.safetyFence.domain.dto.request.HomeAddressUpdateRequestDto;
+import com.project.safetyFence.domain.dto.request.PasswordUpdateRequestDto;
 import com.project.safetyFence.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,7 +23,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -32,6 +39,12 @@ class MyPageControllerTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private User testUser;
     private String testApiKey;
@@ -150,6 +163,257 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.geofences[?(@.name == '임시 장소')]").exists())
                 .andExpect(jsonPath("$.geofences[?(@.type == 0)]").exists())
                 .andExpect(jsonPath("$.geofences[?(@.type == 1)]").exists())
+                .andDo(print());
+    }
+
+    // ========== Password Update Tests ==========
+
+    @Test
+    @DisplayName("updatePassword - 비밀번호 변경 성공")
+    void updatePassword_Success() throws Exception {
+        // given
+        PasswordUpdateRequestDto requestDto = new PasswordUpdateRequestDto(
+                "password123",
+                "newPassword456"
+        );
+
+        // when
+        mockMvc.perform(patch("/mypage/password")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(content().string("비밀번호가 성공적으로 변경되었습니다."))
+                .andDo(print());
+
+        // then
+        entityManager.flush();
+        entityManager.clear();
+
+        User updatedUser = userRepository.findByNumber("01012345678");
+        assertThat(updatedUser.getPassword()).isEqualTo("newPassword456");
+    }
+
+    @Test
+    @DisplayName("updatePassword - 현재 비밀번호 불일치 시 실패")
+    void updatePassword_WrongCurrentPassword_Fail() throws Exception {
+        // given
+        PasswordUpdateRequestDto requestDto = new PasswordUpdateRequestDto(
+                "wrongPassword",
+                "newPassword456"
+        );
+
+        // when & then
+        mockMvc.perform(patch("/mypage/password")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isBadRequest())
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("updatePassword - API Key 없이 요청 시 401 에러")
+    void updatePassword_NoApiKey_Unauthorized() throws Exception {
+        // given
+        PasswordUpdateRequestDto requestDto = new PasswordUpdateRequestDto(
+                "password123",
+                "newPassword456"
+        );
+
+        // when & then
+        mockMvc.perform(patch("/mypage/password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isUnauthorized())
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("updatePassword - 잘못된 API Key로 요청 시 401 에러")
+    void updatePassword_InvalidApiKey_Unauthorized() throws Exception {
+        // given
+        PasswordUpdateRequestDto requestDto = new PasswordUpdateRequestDto(
+                "password123",
+                "newPassword456"
+        );
+
+        // when & then
+        mockMvc.perform(patch("/mypage/password")
+                        .header("X-API-Key", "invalid-api-key-12345")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isUnauthorized())
+                .andDo(print());
+    }
+
+    // ========== Home Address Update Tests ==========
+
+    @Test
+    @DisplayName("updateHomeAddress - 집주소 변경 성공")
+    void updateHomeAddress_Success() throws Exception {
+        // given
+        HomeAddressUpdateRequestDto requestDto = new HomeAddressUpdateRequestDto(
+                "06234",
+                "서울시 강남구 역삼로 789",
+                "202호"
+        );
+
+        // when
+        mockMvc.perform(patch("/mypage/homeAddress")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(content().string("집주소가 성공적으로 변경되었습니다."))
+                .andDo(print());
+
+        // then
+        entityManager.flush();
+        entityManager.clear();
+
+        User updatedUser = userRepository.findByNumber("01012345678");
+        UserAddress updatedAddress = updatedUser.getUserAddress();
+        assertThat(updatedAddress.getHomeAddress()).isEqualTo("06234");
+        assertThat(updatedAddress.getHomeStreetAddress()).isEqualTo("서울시 강남구 역삼로 789");
+        assertThat(updatedAddress.getHomeStreetAddressDetail()).isEqualTo("202호");
+    }
+
+    @Test
+    @DisplayName("updateHomeAddress - 우편번호만 변경")
+    void updateHomeAddress_OnlyPostalCode_Success() throws Exception {
+        // given
+        HomeAddressUpdateRequestDto requestDto = new HomeAddressUpdateRequestDto(
+                "12345",
+                "서울시 강남구 테헤란로 123",
+                "101호"
+        );
+
+        // when
+        mockMvc.perform(patch("/mypage/homeAddress")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(content().string("집주소가 성공적으로 변경되었습니다."))
+                .andDo(print());
+
+        // then
+        entityManager.flush();
+        entityManager.clear();
+
+        User updatedUser = userRepository.findByNumber("01012345678");
+        UserAddress updatedAddress = updatedUser.getUserAddress();
+        assertThat(updatedAddress.getHomeAddress()).isEqualTo("12345");
+    }
+
+    @Test
+    @DisplayName("updateHomeAddress - API Key 없이 요청 시 401 에러")
+    void updateHomeAddress_NoApiKey_Unauthorized() throws Exception {
+        // given
+        HomeAddressUpdateRequestDto requestDto = new HomeAddressUpdateRequestDto(
+                "06234",
+                "서울시 강남구 역삼로 789",
+                "202호"
+        );
+
+        // when & then
+        mockMvc.perform(patch("/mypage/homeAddress")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isUnauthorized())
+                .andDo(print());
+    }
+
+    // ========== Center Address Update Tests ==========
+
+    @Test
+    @DisplayName("updateCenterAddress - 센터주소 변경 성공")
+    void updateCenterAddress_Success() throws Exception {
+        // given
+        CenterAddressUpdateRequestDto requestDto = new CenterAddressUpdateRequestDto(
+                "48058",
+                "부산시 해운대구 해운대로 999"
+        );
+
+        // when
+        mockMvc.perform(patch("/mypage/centerAddress")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(content().string("센터주소가 성공적으로 변경되었습니다."))
+                .andDo(print());
+
+        // then
+        entityManager.flush();
+        entityManager.clear();
+
+        User updatedUser = userRepository.findByNumber("01012345678");
+        UserAddress updatedAddress = updatedUser.getUserAddress();
+        assertThat(updatedAddress.getCenterAddress()).isEqualTo("48058");
+        assertThat(updatedAddress.getCenterStreetAddress()).isEqualTo("부산시 해운대구 해운대로 999");
+    }
+
+    @Test
+    @DisplayName("updateCenterAddress - 우편번호만 변경")
+    void updateCenterAddress_OnlyPostalCode_Success() throws Exception {
+        // given
+        CenterAddressUpdateRequestDto requestDto = new CenterAddressUpdateRequestDto(
+                "67890",
+                "부산시 해운대구 센텀로 456"
+        );
+
+        // when
+        mockMvc.perform(patch("/mypage/centerAddress")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(content().string("센터주소가 성공적으로 변경되었습니다."))
+                .andDo(print());
+
+        // then
+        entityManager.flush();
+        entityManager.clear();
+
+        User updatedUser = userRepository.findByNumber("01012345678");
+        UserAddress updatedAddress = updatedUser.getUserAddress();
+        assertThat(updatedAddress.getCenterAddress()).isEqualTo("67890");
+    }
+
+    @Test
+    @DisplayName("updateCenterAddress - API Key 없이 요청 시 401 에러")
+    void updateCenterAddress_NoApiKey_Unauthorized() throws Exception {
+        // given
+        CenterAddressUpdateRequestDto requestDto = new CenterAddressUpdateRequestDto(
+                "48058",
+                "부산시 해운대구 해운대로 999"
+        );
+
+        // when & then
+        mockMvc.perform(patch("/mypage/centerAddress")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isUnauthorized())
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("updateCenterAddress - 잘못된 API Key로 요청 시 401 에러")
+    void updateCenterAddress_InvalidApiKey_Unauthorized() throws Exception {
+        // given
+        CenterAddressUpdateRequestDto requestDto = new CenterAddressUpdateRequestDto(
+                "48058",
+                "부산시 해운대구 해운대로 999"
+        );
+
+        // when & then
+        mockMvc.perform(patch("/mypage/centerAddress")
+                        .header("X-API-Key", "invalid-api-key-12345")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isUnauthorized())
                 .andDo(print());
     }
 }

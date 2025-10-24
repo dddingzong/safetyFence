@@ -36,6 +36,17 @@ public class MyPageControllerExceptionHandler {
         return ResponseEntity.badRequest().body(errorResponse);
     }
 
+    // IllegalArgumentException 처리
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException exception){
+        Map<String, Object> errorResponse = new HashMap<>();
 
+        errorResponse.put("message", exception.getMessage());
+        errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
+
+        log.warn("IllegalArgumentException: {}", exception.getMessage());
+
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
 
 }
