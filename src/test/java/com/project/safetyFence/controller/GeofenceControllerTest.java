@@ -8,6 +8,7 @@ import com.project.safetyFence.domain.dto.request.FenceInRequestDto;
 import com.project.safetyFence.domain.dto.request.GeofenceDeleteRequestDto;
 import com.project.safetyFence.repository.GeofenceRepository;
 import com.project.safetyFence.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -44,6 +46,9 @@ class GeofenceControllerTest {
 
     @Autowired
     private GeofenceRepository geofenceRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     private User testUser;
     private Geofence permanentGeofence;
@@ -75,21 +80,27 @@ class GeofenceControllerTest {
                 new BigDecimal("37.666"), new BigDecimal("127.666"), 1,
                 LocalDateTime.now(), LocalDateTime.now().plusHours(2), 0);
 
-        // Save user first
-        userRepository.save(testUser);
-
-        // Setup bidirectional relationships
+        // Setup bidirectional relationships BEFORE saving
         testUser.addGeofence(homeGeofence);
         testUser.addGeofence(centerGeofence);
         testUser.addGeofence(permanentGeofence);
         testUser.addGeofence(temporaryGeofence);
 
-        // In tests, save individually to get IDs immediately
-        // (In production, cascade would handle this, but tests need IDs right away)
-        geofenceRepository.save(homeGeofence);
-        geofenceRepository.save(centerGeofence);
-        geofenceRepository.save(permanentGeofence);
-        geofenceRepository.save(temporaryGeofence);
+        // Save user (cascade will save geofences)
+        testUser = userRepository.save(testUser);
+        entityManager.flush(); // ID 할당을 위해 즉시 DB 반영
+
+        // Reload to get managed entities with IDs
+        testUser = userRepository.findByNumberWithGeofences(testUser.getNumber());
+        List<Geofence> geofences = testUser.getGeofences();
+        permanentGeofence = geofences.stream()
+                .filter(g -> "Test Permanent".equals(g.getName()))
+                .findFirst()
+                .orElseThrow();
+        temporaryGeofence = geofences.stream()
+                .filter(g -> "Test Temporary".equals(g.getName()))
+                .findFirst()
+                .orElseThrow();
     }
 
     @Test
@@ -149,6 +160,9 @@ class GeofenceControllerTest {
                 .andExpect(content().string("사용자의 진입이 성공적으로 감지되었습니다."))
                 .andDo(print());
 
+        entityManager.flush();
+        entityManager.clear();
+
         // Verify temporary geofence was deleted
         assertThat(geofenceRepository.findById(temporaryGeofenceId)).isEmpty();
     }
@@ -203,6 +217,9 @@ class GeofenceControllerTest {
                 .andExpect(content().string("지오펜스가 성공적으로 삭제되었습니다."))
                 .andDo(print());
 
+        entityManager.flush();
+        entityManager.clear();
+
         // Verify geofence was deleted from database
         assertThat(geofenceRepository.findById(geofenceId)).isEmpty();
     }
@@ -221,6 +238,9 @@ class GeofenceControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isOk());
+
+        entityManager.flush();
+        entityManager.clear();
 
         // then - verify deleted from database
         assertThat(geofenceRepository.findById(geofenceId)).isEmpty();
@@ -278,6 +298,9 @@ class GeofenceControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new GeofenceDeleteRequestDto(id2))))
                 .andExpect(status().isOk());
+
+        entityManager.flush();
+        entityManager.clear();
 
         // then - verify both deleted
         assertThat(geofenceRepository.findById(id1)).isEmpty();
