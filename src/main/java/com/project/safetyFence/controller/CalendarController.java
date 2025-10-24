@@ -1,8 +1,7 @@
 package com.project.safetyFence.controller;
 
-
 import com.project.safetyFence.domain.dto.request.EventDataRequestDto;
-import com.project.safetyFence.domain.dto.response.UserDataResponseDto;
+import com.project.safetyFence.domain.dto.response.OneDayResponseDto;
 import com.project.safetyFence.service.CalendarService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +17,10 @@ public class CalendarController {
     private final CalendarService calendarService;
 
     @GetMapping("/calendar/userData")
-    public ResponseEntity<List<UserDataResponseDto>> getUserData(HttpServletRequest request) {
+    public ResponseEntity<List<OneDayResponseDto>> getUserData(HttpServletRequest request) {
         String userNumber = (String) request.getAttribute("userNumber");
-        // TODO: CalendarService에서 실제 데이터 조회 구현 필요
-        return ResponseEntity.ok(null);
+        List<OneDayResponseDto> calendarData = calendarService.getCalendarData(userNumber);
+        return ResponseEntity.ok(calendarData);
     }
 
     @PostMapping("/calendar/addEvent")
