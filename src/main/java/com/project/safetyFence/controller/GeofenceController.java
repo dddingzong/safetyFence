@@ -68,7 +68,8 @@ public class GeofenceController {
     @DeleteMapping("/geofence/deleteFence")
     public ResponseEntity<String> deleteFence(@RequestBody GeofenceDeleteRequestDto geofenceRequestDto
             , HttpServletRequest request) {
-        geofenceService.deleteFence(geofenceRequestDto.getId());
+        String userNumber = (String) request.getAttribute("userNumber");
+        geofenceService.deleteFence(userNumber, geofenceRequestDto.getId());
         return ResponseEntity.ok("지오펜스가 성공적으로 삭제되었습니다.");
     }
 

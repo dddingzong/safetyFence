@@ -109,6 +109,11 @@ public class User {
         }
     }
 
+    public void removeGeofence(Geofence geofence) {
+        geofences.remove(geofence);
+        // 컬렉션에서만 제거 - orphanRemoval = true가 자동으로 DB 삭제 처리
+    }
+
     // UserEvent 연관관계 편의 메서드
     public void addUserEvent(UserEvent userEvent) {
         userEvents.add(userEvent);

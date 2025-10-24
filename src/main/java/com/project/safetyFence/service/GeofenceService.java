@@ -3,9 +3,7 @@ package com.project.safetyFence.service;
 import com.project.safetyFence.domain.Geofence;
 import com.project.safetyFence.domain.User;
 import com.project.safetyFence.domain.UserAddress;
-import com.project.safetyFence.domain.dto.request.FenceInRequestDto;
 import com.project.safetyFence.domain.dto.request.GeofenceRequestDto;
-import com.project.safetyFence.domain.dto.request.NumberRequestDto;
 import com.project.safetyFence.repository.GeofenceRepository;
 import com.project.safetyFence.repository.UserRepository;
 import com.project.safetyFence.util.kakaoApi.KakaoApiService;
@@ -61,13 +59,16 @@ public class GeofenceService {
 
     @Transactional
     public void userFenceIn(String userNumber, Long geofenceId) {
-        User user = userRepository.findByNumber(userNumber);
-        Geofence geofence = geofenceRepository.findById(geofenceId)
+        User user = userRepository.findByNumberWithGeofences(userNumber);
+
+        Geofence geofence = user.getGeofences().stream()
+                .filter(g -> g.getId().equals(geofenceId))
+                .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Geofence not found"));
 
         // 일회성이면 삭제
         if (geofence.getType() == 1) {
-            geofenceRepository.delete(geofence);
+            user.removeGeofence(geofence);
             log.info("일시적인 지오펜스 진입: 지오펜스 ID " + geofence.getId() + " 삭제됨.");
         }
 
@@ -105,11 +106,16 @@ public class GeofenceService {
     }
 
     @Transactional
-    public void deleteFence(Long geofenceId) {
-        Geofence geofence = geofenceRepository.findById(geofenceId)
+    public void deleteFence(String userNumber, Long geofenceId) {
+        User user = userRepository.findByNumberWithGeofences(userNumber);
+
+        Geofence geofenceToDelete = user.getGeofences().stream()
+                .filter(geofence -> geofence.getId().equals(geofenceId))
+                .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Geofence not found"));
 
-        geofenceRepository.delete(geofence);
+        user.removeGeofence(geofenceToDelete);
+        // orphanRemoval = true로 트랜잭션 종료 시 자동 삭제
     }
 
 }

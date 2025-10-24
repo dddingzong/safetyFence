@@ -18,4 +18,7 @@ public interface UserRepository extends JpaRepository<User, String>{
 
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.userEvents WHERE u.number = :number")
     User findByNumberWithEvents(@Param("number") String number);
+
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.geofences WHERE u.number = :number")
+    User findByNumberWithGeofences(@Param("number") String number);
 }
