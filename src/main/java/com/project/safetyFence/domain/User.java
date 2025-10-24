@@ -135,4 +135,9 @@ public class User {
         this.apiKey = apiKey;
     }
 
+    // 비밀번호 변경 메서드
+    public void updatePassword(String newPassword) {
+        this.password = newPassword;
+    }
+
 }
