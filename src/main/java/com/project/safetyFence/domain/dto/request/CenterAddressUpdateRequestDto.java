@@ -8,5 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CenterAddressUpdateRequestDto {
+    private String centerAddress;  // 우편번호
     private String centerStreetAddress;
 }

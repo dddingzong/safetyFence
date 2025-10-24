@@ -47,12 +47,14 @@ public class UserAddress {
         this.centerStreetAddress = centerStreetAddress;
     }
 
-    public void updateHomeStreetAddress(String homeStreetAddress, String homeStreetAddressDetail) {
+    public void updateHomeStreetAddress(String homeAddress, String homeStreetAddress, String homeStreetAddressDetail) {
+        this.homeAddress = homeAddress;
         this.homeStreetAddress = homeStreetAddress;
         this.homeStreetAddressDetail = homeStreetAddressDetail;
     }
 
-    public void updateCenterStreetAddress(String centerStreetAddress) {
+    public void updateCenterStreetAddress(String centerAddress, String centerStreetAddress) {
+        this.centerAddress = centerAddress;
         this.centerStreetAddress = centerStreetAddress;
     }
 

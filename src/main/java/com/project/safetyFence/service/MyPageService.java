@@ -76,8 +76,9 @@ public class MyPageService {
             throw new IllegalArgumentException("사용자 주소 정보가 없습니다.");
         }
 
-        // 집주소 변경
+        // 집주소 변경 (우편번호 포함)
         userAddress.updateHomeStreetAddress(
+            dto.getHomeAddress(),
             dto.getHomeStreetAddress(),
             dto.getHomeStreetAddressDetail()
         );
@@ -92,7 +93,10 @@ public class MyPageService {
             throw new IllegalArgumentException("사용자 주소 정보가 없습니다.");
         }
 
-        // 센터주소 변경
-        userAddress.updateCenterStreetAddress(dto.getCenterStreetAddress());
+        // 센터주소 변경 (우편번호 포함)
+        userAddress.updateCenterStreetAddress(
+            dto.getCenterAddress(),
+            dto.getCenterStreetAddress()
+        );
     }
 }

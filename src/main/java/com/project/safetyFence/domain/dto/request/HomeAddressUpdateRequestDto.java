@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class HomeAddressUpdateRequestDto {
+    private String homeAddress;  // 우편번호
     private String homeStreetAddress;
     private String homeStreetAddressDetail;
 }
