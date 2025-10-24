@@ -6,6 +6,7 @@ import com.project.safetyFence.domain.dto.request.GeofenceRequestDto;
 import com.project.safetyFence.repository.GeofenceRepository;
 import com.project.safetyFence.repository.UserRepository;
 
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,6 +35,9 @@ class GeofenceServiceTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
     private User testUser;
     private Geofence permanentGeofence;
     private Geofence temporaryGeofence;
@@ -43,7 +48,6 @@ class GeofenceServiceTest {
     void setUp() {
         // Test user
         testUser = new User(TEST_NUMBER, "tester", "password", LocalDate.of(1990, 1, 1), "test-link");
-        userRepository.save(testUser);
 
         // Permanent geofence (type = 0, maxSequence = 5)
         permanentGeofence = new Geofence(
@@ -55,7 +59,6 @@ class GeofenceServiceTest {
                 0,
                 5
         );
-        geofenceRepository.save(permanentGeofence);
 
         // Temporary geofence (type = 1)
         temporaryGeofence = new Geofence(
@@ -69,7 +72,26 @@ class GeofenceServiceTest {
                 LocalDateTime.now().plusHours(2),
                 0
         );
-        geofenceRepository.save(temporaryGeofence);
+
+        // Setup bidirectional relationships BEFORE saving
+        testUser.addGeofence(permanentGeofence);
+        testUser.addGeofence(temporaryGeofence);
+
+        // Save user (cascade will save geofences)
+        testUser = userRepository.save(testUser);
+        entityManager.flush(); // ID 할당을 위해 즉시 DB 반영
+
+        // Reload to get managed entities with IDs
+        testUser = userRepository.findByNumberWithGeofences(testUser.getNumber());
+        List<Geofence> geofences = testUser.getGeofences();
+        permanentGeofence = geofences.stream()
+                .filter(g -> "Home".equals(g.getName()))
+                .findFirst()
+                .orElseThrow();
+        temporaryGeofence = geofences.stream()
+                .filter(g -> "Temporary Location".equals(g.getName()))
+                .findFirst()
+                .orElseThrow();
     }
 
     @Test
@@ -101,7 +123,10 @@ class GeofenceServiceTest {
                 0,
                 0
         );
+        testUser.addGeofence(zeroSequenceGeofence);
         geofenceRepository.save(zeroSequenceGeofence);
+        entityManager.flush();
+
         Long geofenceId = zeroSequenceGeofence.getId();
 
         // when
@@ -121,6 +146,9 @@ class GeofenceServiceTest {
 
         // when
         geofenceService.userFenceIn(TEST_NUMBER, temporaryGeofenceId);
+
+        entityManager.flush();
+        entityManager.clear();
 
         // then
         assertThat(geofenceRepository.findById(temporaryGeofenceId)).isEmpty();
