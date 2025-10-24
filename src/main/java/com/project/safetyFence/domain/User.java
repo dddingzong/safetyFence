@@ -121,6 +121,10 @@ public class User {
         userEvents.remove(userEvent);
     }
 
+    public void removeLink(Link link) {
+        links.remove(link);
+    }
+
     // API Key 설정 메서드
     public void updateApiKey(String apiKey) {
         this.apiKey = apiKey;

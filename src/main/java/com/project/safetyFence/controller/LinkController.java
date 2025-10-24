@@ -1,15 +1,13 @@
 package com.project.safetyFence.controller;
 
 import com.project.safetyFence.domain.dto.request.LinkRequestDto;
+import com.project.safetyFence.domain.dto.request.NumberRequestDto;
 import com.project.safetyFence.domain.dto.response.LinkResponseDto;
 import com.project.safetyFence.service.LinkService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -31,6 +29,14 @@ public class LinkController {
         String userNumber = (String) request.getAttribute("userNumber");
         linkService.addLinkUser(userNumber, linkRequestDto);
         return ResponseEntity.ok("Link user added successfully");
+    }
+
+    @DeleteMapping("/link/deleteUser")
+    public ResponseEntity<String> deleteLinkUser(HttpServletRequest request, @RequestBody NumberRequestDto numberRequestDto) {
+        String userNumber = (String) request.getAttribute("userNumber");
+        String linkUserNumber = numberRequestDto.getNumber();
+        linkService.deleteLinkUser(userNumber, linkUserNumber);
+        return ResponseEntity.ok("Link user deleted successfully");
     }
 
 

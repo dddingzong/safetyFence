@@ -15,7 +15,8 @@ public enum ErrorResult {
     LINK_CODE_NOT_EXIST(HttpStatus.BAD_REQUEST, "일치하는 유저 코드가 존재하지 않습니다."),
     NOT_EXIST_ZIPCODE(HttpStatus.BAD_REQUEST, "존재하지 않는 우편번호 입니다."),
     CANNOT_ADD_SELF_AS_LINK(HttpStatus.BAD_REQUEST, "자기 자신을 링크로 추가할 수 없습니다."),
-    LINK_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 링크에 추가된 사용자입니다.");
+    LINK_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 링크에 추가된 사용자입니다."),
+    LINK_NOT_FOUND(HttpStatus.BAD_REQUEST, "링크 삭제 중 문제가 발생했습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

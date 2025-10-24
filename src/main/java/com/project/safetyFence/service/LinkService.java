@@ -67,4 +67,16 @@ public class LinkService {
         userRepository.save(user);
     }
 
+    public void deleteLinkUser(String userNumber, String linkUserNumber) {
+        User user = userRepository.findByNumberWithLinks(userNumber);
+
+        Link linkToDelete = user.getLinks().stream()
+                .filter(link -> link.getUserNumber().equals(linkUserNumber))
+                .findFirst()
+                .orElseThrow(() -> new CustomException(ErrorResult.LINK_NOT_FOUND));
+
+        user.removeLink(linkToDelete);
+
+    }
+
 }
