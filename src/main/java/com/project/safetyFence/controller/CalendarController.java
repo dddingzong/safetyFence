@@ -33,8 +33,9 @@ public class CalendarController {
     }
 
     @DeleteMapping("/calendar/deleteEvent")
-    public ResponseEntity<String> deleteEvent(@RequestParam Long eventId) {
-        calendarService.deleteEvent(eventId);
+    public ResponseEntity<String> deleteEvent(HttpServletRequest request, @RequestParam Long eventId) {
+        String userNumber = (String) request.getAttribute("userNumber");
+        calendarService.deleteEvent(userNumber, eventId);
         return ResponseEntity.ok("Event deleted");
     }
 

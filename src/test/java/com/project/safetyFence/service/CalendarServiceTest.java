@@ -6,6 +6,7 @@ import com.project.safetyFence.domain.dto.request.EventDataRequestDto;
 import com.project.safetyFence.repository.UserEventRepository;
 import com.project.safetyFence.repository.UserRepository;
 
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,9 @@ class CalendarServiceTest {
 
     @Autowired
     private UserEventRepository userEventRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     private User testUser;
 
@@ -184,7 +188,9 @@ class CalendarServiceTest {
         Long eventId = user.getUserEvents().get(0).getId();
 
         // when
-        calendarService.deleteEvent(eventId);
+        calendarService.deleteEvent(TEST_NUMBER, eventId);
+        entityManager.flush();
+        entityManager.clear();
 
         // then - verify deleted from database
         assertThat(userEventRepository.findById(eventId)).isEmpty();
@@ -204,11 +210,36 @@ class CalendarServiceTest {
         Long eventId3 = user.getUserEvents().get(2).getId();
 
         // when - delete middle event
-        calendarService.deleteEvent(eventId2);
+        calendarService.deleteEvent(TEST_NUMBER, eventId2);
+        entityManager.flush();
+        entityManager.clear();
 
         // then - verify only event2 is deleted from database
         assertThat(userEventRepository.findById(eventId1)).isPresent();
         assertThat(userEventRepository.findById(eventId2)).isEmpty();
         assertThat(userEventRepository.findById(eventId3)).isPresent();
+    }
+
+    @Test
+    @DisplayName("deleteEvent - User 컬렉션도 검증 (orphanRemoval 테스트)")
+    void deleteEvent_VerifyUserCollectionSync() {
+        // given
+        calendarService.addEvent(TEST_NUMBER, new EventDataRequestDto("Event to Delete", "2024-11-01", "10:00"));
+
+        User user = userRepository.findByNumber(TEST_NUMBER);
+        Long eventId = user.getUserEvents().get(0).getId();
+        assertThat(user.getUserEvents()).hasSize(1);  // 삭제 전: 1개
+
+        // when
+        calendarService.deleteEvent(TEST_NUMBER, eventId);
+        entityManager.flush();  // orphanRemoval을 즉시 DB에 반영
+        entityManager.clear();  // 영속성 컨텍스트 초기화 (캐시 제거)
+
+        // then - DB는 삭제됨 ✅
+        assertThat(userEventRepository.findById(eventId)).isEmpty();
+
+        // then - User 컬렉션도 확인 (새로 조회)
+        User updatedUser = userRepository.findByNumber(TEST_NUMBER);
+        assertThat(updatedUser.getUserEvents()).hasSize(0);  // orphanRemoval 작동!
     }
 }

@@ -15,4 +15,7 @@ public interface UserRepository extends JpaRepository<User, String>{
 
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.links WHERE u.number = :number")
     User findByNumberWithLinks(@Param("number") String number);
+
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.userEvents WHERE u.number = :number")
+    User findByNumberWithEvents(@Param("number") String number);
 }

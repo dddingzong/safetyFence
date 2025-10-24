@@ -38,9 +38,14 @@ public class CalendarService {
     }
 
     @Transactional
-    public void deleteEvent(Long eventId) {
-        UserEvent userEvent = userEventRepository.findById(eventId)
+    public void deleteEvent(String userNumber, Long eventId) {
+        User user = userRepository.findByNumberWithEvents(userNumber);
+
+        UserEvent userEventToDelete = user.getUserEvents().stream()
+                .filter(event -> event.getId().equals(eventId))
+                .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Event not found"));
-        userEventRepository.delete(userEvent);
+
+        user.removeEvent(userEventToDelete);
     }
 }
