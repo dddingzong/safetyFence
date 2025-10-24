@@ -4,7 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.safetyFence.domain.Link;
 import com.project.safetyFence.domain.User;
 import com.project.safetyFence.domain.dto.request.LinkRequestDto;
+import com.project.safetyFence.domain.dto.request.NumberRequestDto;
+import com.project.safetyFence.repository.LinkRepository;
 import com.project.safetyFence.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,8 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -36,6 +38,12 @@ class LinkControllerTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private LinkRepository linkRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     private User testUser;
     private String testApiKey;
@@ -325,5 +333,163 @@ class LinkControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("이미 링크에 추가된 사용자입니다."))
                 .andDo(print());
+    }
+
+    @Test
+    @DisplayName("deleteLinkUser - 링크 삭제 성공")
+    void deleteLinkUser_Success() throws Exception {
+        // given
+        NumberRequestDto requestDto = new NumberRequestDto("01011111111");
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        int initialLinkCount = testUser.getLinks().size();
+
+        // when
+        mockMvc.perform(delete("/link/deleteUser")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Link user deleted successfully"))
+                .andDo(print());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // then - DB 검증
+        User updatedUser = userRepository.findByNumberWithLinks(TEST_NUMBER);
+        assertThat(updatedUser.getLinks()).hasSize(initialLinkCount - 1);
+        assertThat(updatedUser.getLinks()).noneMatch(link -> "01011111111".equals(link.getUserNumber()));
+    }
+
+    @Test
+    @DisplayName("deleteLinkUser - DB에서 삭제 검증 (orphanRemoval)")
+    void deleteLinkUser_VerifyDatabaseDeletion() throws Exception {
+        // given
+        User user = userRepository.findByNumberWithLinks(TEST_NUMBER);
+        Link linkToDelete = user.getLinks().stream()
+                .filter(link -> "01022222222".equals(link.getUserNumber()))
+                .findFirst()
+                .orElseThrow();
+        Long linkId = linkToDelete.getId();
+
+        NumberRequestDto requestDto = new NumberRequestDto("01022222222");
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        // when
+        mockMvc.perform(delete("/link/deleteUser")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isOk());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // then - DB에서 실제 삭제되었는지 확인
+        assertThat(linkRepository.findById(linkId)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("deleteLinkUser - API Key 없이 요청 시 401 에러")
+    void deleteLinkUser_NoApiKey_Unauthorized() throws Exception {
+        // given
+        NumberRequestDto requestDto = new NumberRequestDto("01011111111");
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        // when & then
+        mockMvc.perform(delete("/link/deleteUser")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isUnauthorized())
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("deleteLinkUser - 잘못된 API Key로 요청 시 401 에러")
+    void deleteLinkUser_InvalidApiKey_Unauthorized() throws Exception {
+        // given
+        NumberRequestDto requestDto = new NumberRequestDto("01011111111");
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        // when & then
+        mockMvc.perform(delete("/link/deleteUser")
+                        .header("X-API-Key", "invalid-api-key-12345")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isUnauthorized())
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("deleteLinkUser - 존재하지 않는 전화번호로 삭제 시 에러")
+    void deleteLinkUser_NonExistentNumber_ThrowsException() throws Exception {
+        // given
+        NumberRequestDto requestDto = new NumberRequestDto("01099999999");
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        // when & then
+        mockMvc.perform(delete("/link/deleteUser")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("링크 삭제 중 문제가 발생했습니다."))
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("deleteLinkUser - 여러 링크 중 하나만 삭제")
+    void deleteLinkUser_DeleteOneOfMultiple() throws Exception {
+        // given
+        NumberRequestDto requestDto = new NumberRequestDto("01022222222");
+        String jsonRequest = objectMapper.writeValueAsString(requestDto);
+
+        // when
+        mockMvc.perform(delete("/link/deleteUser")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isOk());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // then - 나머지 링크는 유지되는지 확인
+        User updatedUser = userRepository.findByNumberWithLinks(TEST_NUMBER);
+        assertThat(updatedUser.getLinks()).hasSize(2);
+        assertThat(updatedUser.getLinks()).anyMatch(link -> "01011111111".equals(link.getUserNumber()));
+        assertThat(updatedUser.getLinks()).anyMatch(link -> "01033333333".equals(link.getUserNumber()));
+        assertThat(updatedUser.getLinks()).noneMatch(link -> "01022222222".equals(link.getUserNumber()));
+    }
+
+    @Test
+    @DisplayName("deleteLinkUser - 모든 링크 삭제")
+    void deleteLinkUser_DeleteAllLinks() throws Exception {
+        // when - 모든 링크 삭제
+        mockMvc.perform(delete("/link/deleteUser")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new NumberRequestDto("01011111111"))))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/link/deleteUser")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new NumberRequestDto("01022222222"))))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/link/deleteUser")
+                        .header("X-API-Key", testApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new NumberRequestDto("01033333333"))))
+                .andExpect(status().isOk());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // then - 모든 링크가 삭제되었는지 확인
+        User updatedUser = userRepository.findByNumberWithLinks(TEST_NUMBER);
+        assertThat(updatedUser.getLinks()).isEmpty();
     }
 }
