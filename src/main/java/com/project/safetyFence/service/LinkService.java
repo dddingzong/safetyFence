@@ -79,4 +79,8 @@ public class LinkService {
 
     }
 
+    public boolean hasLink(String subscriberNumber, String targetUserNumber) {
+        return linkRepository.existsByUser_NumberAndUserNumber(subscriberNumber, targetUserNumber);
+    }
+
 }
