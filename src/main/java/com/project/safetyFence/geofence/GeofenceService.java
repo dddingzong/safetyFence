@@ -1,12 +1,15 @@
 package com.project.safetyFence.geofence;
 
 import com.project.safetyFence.geofence.domain.Geofence;
+import com.project.safetyFence.geofence.handler.GeofenceEntryHandler;
+import com.project.safetyFence.geofence.service.InitialGeofenceCreator;
 import com.project.safetyFence.user.domain.User;
 import com.project.safetyFence.user.domain.UserAddress;
 import com.project.safetyFence.geofence.dto.GeofenceRequestDto;
 import com.project.safetyFence.geofence.GeofenceRepository;
 import com.project.safetyFence.user.UserRepository;
-import com.project.safetyFence.common.util.kakaoApi.KakaoApiService;
+import com.project.safetyFence.common.service.geocoding.GeocodingService;
+import com.project.safetyFence.common.service.geocoding.dto.Coordinate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,38 +18,47 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 
-import static com.project.safetyFence.common.util.kakaoApi.dto.KakaoAddressResponseDto.*;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class GeofenceService {
+public class GeofenceService implements InitialGeofenceCreator {
 
     private final GeofenceRepository geofenceRepository;
-    private final KakaoApiService kakaoApiService; // KakaoApiService 의존성 주입
+    private final GeocodingService geocodingService;
     private final UserRepository userRepository;
+    private final List<GeofenceEntryHandler> entryHandlers; // 핸들러 리스트 주입
 
-    public Geofence saveInitialHomeGeofence(UserAddress userAddress) {
-        // 1. UserAddress에서 도로명 주소 문자열을 가져옵니다.
+    @Override
+    public Geofence createHomeGeofence(UserAddress userAddress) {
         String address = userAddress.getHomeStreetAddress();
-        // 2. Kakao API를 호출하여 주소를 좌표로 변환합니다.
-        DocumentDto document = kakaoApiService.requestAddressSearch(address);
+        Coordinate coordinate = geocodingService.convertAddressToCoordinate(address);
 
-        BigDecimal latitude = new BigDecimal(document.getLatitude());
-        BigDecimal longitude = new BigDecimal(document.getLongitude());
-
-        Geofence geofence = new Geofence(userAddress.getUser(), "집", address ,latitude, longitude, 0, 100);
+        Geofence geofence = new Geofence(
+                userAddress.getUser(),
+                "집",
+                address,
+                coordinate.getLatitude(),
+                coordinate.getLongitude(),
+                0,
+                100
+        );
         return geofence;
     }
 
-    public Geofence saveInitialCenterGeofence(UserAddress userAddress) {
+    @Override
+    public Geofence createCenterGeofence(UserAddress userAddress) {
         String address = userAddress.getCenterStreetAddress();
-        DocumentDto document = kakaoApiService.requestAddressSearch(address);
+        Coordinate coordinate = geocodingService.convertAddressToCoordinate(address);
 
-        BigDecimal latitude = new BigDecimal(document.getLatitude());
-        BigDecimal longitude = new BigDecimal(document.getLongitude());
-
-        Geofence geofence = new Geofence(userAddress.getUser(), "센터", address ,latitude, longitude, 0, 100);
+        Geofence geofence = new Geofence(
+                userAddress.getUser(),
+                "센터",
+                address,
+                coordinate.getLatitude(),
+                coordinate.getLongitude(),
+                0,
+                100
+        );
         return geofence;
     }
 
@@ -66,39 +78,45 @@ public class GeofenceService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Geofence not found"));
 
-        // 일회성이면 삭제
-        if (geofence.getType() == 1) {
-            user.removeGeofence(geofence);
-            log.info("일시적인 지오펜스 진입: 지오펜스 ID " + geofence.getId() + " 삭제됨.");
-        }
+        // 전략 패턴 적용: 타입에 맞는 핸들러 찾아서 실행
+        GeofenceEntryHandler handler = entryHandlers.stream()
+                .filter(h -> h.supports(geofence.getType()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Unsupported geofence type: " + geofence.getType()));
 
-        // 지속성이면 maxSequence 차감
-        if (geofence.getType() == 0) {
-            int currentMaxSequence = geofence.getMaxSequence();
-            if (currentMaxSequence > 0) {
-                geofence.decreaseMaxSequence();
-            } else {
-                log.info("지속적인 지오펜스 진입: 지오펜스 ID " + geofence.getId() + "의 maxSequence가 이미 0입니다.");
-            }
-        }
+        handler.handle(user, geofence);
     }
 
     @Transactional
     public void createNewFence(String userNumber, GeofenceRequestDto geofenceRequestDto) {
         User user = userRepository.findByNumber(userNumber);
         String address = geofenceRequestDto.getAddress();
-        DocumentDto document = kakaoApiService.requestAddressSearch(address);
-
-        BigDecimal latitude = new BigDecimal(document.getLatitude());
-        BigDecimal longitude = new BigDecimal(document.getLongitude());
+        Coordinate coordinate = geocodingService.convertAddressToCoordinate(address);
 
         Geofence geofence;
         if (geofenceRequestDto.getType() == 0) { // 영구 지오펜스
-            geofence = new Geofence(user, geofenceRequestDto.getName(), address, latitude, longitude, 0, 999);
+            geofence = new Geofence(
+                    user,
+                    geofenceRequestDto.getName(),
+                    address,
+                    coordinate.getLatitude(),
+                    coordinate.getLongitude(),
+                    0,
+                    999
+            );
         } else { // 일시 지오펜스
-            geofence = new Geofence(user, geofenceRequestDto.getName(), address, latitude, longitude, 1,
+            geofence = new Geofence(
+                    user,
+                    geofenceRequestDto.getName(),
+                    address,
+                    coordinate.getLatitude(),
+                    coordinate.getLongitude(),
+                    1,
                     java.time.LocalDateTime.parse(geofenceRequestDto.getStartTime()),
-                    java.time.LocalDateTime.parse(geofenceRequestDto.getEndTime()), 100);
+                    java.time.LocalDateTime.parse(geofenceRequestDto.getEndTime()),
+                    100
+            );
         }
 
         user.addGeofence(geofence);

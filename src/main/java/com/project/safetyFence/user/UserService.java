@@ -1,7 +1,7 @@
 package com.project.safetyFence.user;
 
 import com.project.safetyFence.geofence.domain.Geofence;
-import com.project.safetyFence.geofence.GeofenceService;
+import com.project.safetyFence.geofence.service.InitialGeofenceCreator;
 import com.project.safetyFence.user.domain.User;
 import com.project.safetyFence.user.domain.UserAddress;
 import com.project.safetyFence.user.dto.SignUpRequestDto;
@@ -22,7 +22,7 @@ public class UserService {
     private final LinkCodeGenerator linkCodeGenerator;
     private final UserRepository userRepository;
     private final UserAddressService userAddressService;
-    private final GeofenceService geofenceService;
+    private final InitialGeofenceCreator initialGeofenceCreator; // 인터페이스로 변경
 
     public boolean checkExistNumber(String number) {
         return userRepository.existsByNumber(number);
@@ -45,12 +45,12 @@ public class UserService {
         user.addUserAddress(userAddress);
 
         // user 주소로 geofence 생성
-        Geofence homeGeofence = geofenceService.saveInitialHomeGeofence(userAddress);
+        Geofence homeGeofence = initialGeofenceCreator.createHomeGeofence(userAddress);
         user.addGeofence(homeGeofence);
 
         // center 주소가 있을 경우에만 geofence 생성
         if (signUpRequestDto.getCenterStreetAddress() != null && !signUpRequestDto.getCenterStreetAddress().isEmpty()) {
-            Geofence centerGeofence = geofenceService.saveInitialCenterGeofence(userAddress);
+            Geofence centerGeofence = initialGeofenceCreator.createCenterGeofence(userAddress);
             user.addGeofence(centerGeofence);
         }
 
