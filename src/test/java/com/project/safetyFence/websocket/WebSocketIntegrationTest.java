@@ -1,12 +1,12 @@
 package com.project.safetyFence.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.project.safetyFence.domain.Link;
-import com.project.safetyFence.domain.User;
-import com.project.safetyFence.domain.dto.request.LocationUpdateDto;
-import com.project.safetyFence.repository.LinkRepository;
-import com.project.safetyFence.repository.UserLocationRepository;
-import com.project.safetyFence.repository.UserRepository;
+import com.project.safetyFence.link.domain.Link;
+import com.project.safetyFence.user.domain.User;
+import com.project.safetyFence.location.dto.LocationUpdateDto;
+import com.project.safetyFence.link.LinkRepository;
+import com.project.safetyFence.location.UserLocationRepository;
+import com.project.safetyFence.user.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

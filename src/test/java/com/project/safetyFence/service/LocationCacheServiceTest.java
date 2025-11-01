@@ -1,6 +1,7 @@
 package com.project.safetyFence.service;
 
-import com.project.safetyFence.domain.dto.request.LocationUpdateDto;
+import com.project.safetyFence.location.dto.LocationUpdateDto;
+import com.project.safetyFence.location.LocationCacheService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

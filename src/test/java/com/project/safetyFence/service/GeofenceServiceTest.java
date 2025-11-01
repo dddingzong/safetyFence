@@ -1,10 +1,11 @@
 package com.project.safetyFence.service;
 
-import com.project.safetyFence.domain.Geofence;
-import com.project.safetyFence.domain.User;
-import com.project.safetyFence.domain.dto.request.GeofenceRequestDto;
-import com.project.safetyFence.repository.GeofenceRepository;
-import com.project.safetyFence.repository.UserRepository;
+import com.project.safetyFence.geofence.domain.Geofence;
+import com.project.safetyFence.user.domain.User;
+import com.project.safetyFence.geofence.dto.GeofenceRequestDto;
+import com.project.safetyFence.geofence.GeofenceRepository;
+import com.project.safetyFence.user.UserRepository;
+import com.project.safetyFence.geofence.GeofenceService;
 
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;

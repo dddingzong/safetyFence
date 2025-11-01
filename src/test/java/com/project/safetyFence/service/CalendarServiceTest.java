@@ -1,10 +1,11 @@
 package com.project.safetyFence.service;
 
-import com.project.safetyFence.domain.User;
-import com.project.safetyFence.domain.UserEvent;
-import com.project.safetyFence.domain.dto.request.EventDataRequestDto;
-import com.project.safetyFence.repository.UserEventRepository;
-import com.project.safetyFence.repository.UserRepository;
+import com.project.safetyFence.user.domain.User;
+import com.project.safetyFence.calendar.domain.UserEvent;
+import com.project.safetyFence.calendar.dto.EventDataRequestDto;
+import com.project.safetyFence.calendar.UserEventRepository;
+import com.project.safetyFence.user.UserRepository;
+import com.project.safetyFence.calendar.CalendarService;
 
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;

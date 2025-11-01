@@ -1,9 +1,9 @@
 package com.project.safetyFence.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.project.safetyFence.domain.User;
-import com.project.safetyFence.domain.dto.request.SignInRequestDto;
-import com.project.safetyFence.repository.UserRepository;
+import com.project.safetyFence.user.domain.User;
+import com.project.safetyFence.user.dto.SignInRequestDto;
+import com.project.safetyFence.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

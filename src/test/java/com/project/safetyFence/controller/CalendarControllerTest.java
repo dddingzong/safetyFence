@@ -1,13 +1,13 @@
 package com.project.safetyFence.controller;
 
-import com.project.safetyFence.domain.Geofence;
-import com.project.safetyFence.domain.Log;
-import com.project.safetyFence.domain.User;
-import com.project.safetyFence.domain.UserEvent;
-import com.project.safetyFence.repository.GeofenceRepository;
-import com.project.safetyFence.repository.LogRepository;
-import com.project.safetyFence.repository.UserEventRepository;
-import com.project.safetyFence.repository.UserRepository;
+import com.project.safetyFence.geofence.domain.Geofence;
+import com.project.safetyFence.log.domain.Log;
+import com.project.safetyFence.user.domain.User;
+import com.project.safetyFence.calendar.domain.UserEvent;
+import com.project.safetyFence.geofence.GeofenceRepository;
+import com.project.safetyFence.log.LogRepository;
+import com.project.safetyFence.calendar.UserEventRepository;
+import com.project.safetyFence.user.UserRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

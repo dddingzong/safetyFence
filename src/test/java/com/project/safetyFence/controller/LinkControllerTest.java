@@ -1,12 +1,12 @@
 package com.project.safetyFence.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.project.safetyFence.domain.Link;
-import com.project.safetyFence.domain.User;
-import com.project.safetyFence.domain.dto.request.LinkRequestDto;
-import com.project.safetyFence.domain.dto.request.NumberRequestDto;
-import com.project.safetyFence.repository.LinkRepository;
-import com.project.safetyFence.repository.UserRepository;
+import com.project.safetyFence.link.domain.Link;
+import com.project.safetyFence.user.domain.User;
+import com.project.safetyFence.link.dto.LinkRequestDto;
+import com.project.safetyFence.mypage.dto.NumberRequestDto;
+import com.project.safetyFence.link.LinkRepository;
+import com.project.safetyFence.user.UserRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

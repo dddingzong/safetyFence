@@ -1,9 +1,10 @@
 package com.project.safetyFence.service;
 
-import com.project.safetyFence.domain.Log;
-import com.project.safetyFence.domain.User;
-import com.project.safetyFence.domain.dto.response.LogResponseDto;
-import com.project.safetyFence.repository.UserRepository;
+import com.project.safetyFence.log.domain.Log;
+import com.project.safetyFence.user.domain.User;
+import com.project.safetyFence.log.dto.LogResponseDto;
+import com.project.safetyFence.user.UserRepository;
+import com.project.safetyFence.log.LogService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

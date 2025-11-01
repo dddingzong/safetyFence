@@ -1,7 +1,8 @@
 package com.project.safetyFence.util.kakaoApi;
 
-import com.project.safetyFence.domain.dto.response.KakaoAddressResponseDto;
+import com.project.safetyFence.common.util.kakaoApi.dto.KakaoAddressResponseDto;
 import org.junit.jupiter.api.Disabled;
+import com.project.safetyFence.common.util.kakaoApi.KakaoApiService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

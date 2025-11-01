@@ -1,13 +1,13 @@
 package com.project.safetyFence.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.project.safetyFence.domain.Geofence;
-import com.project.safetyFence.domain.User;
-import com.project.safetyFence.domain.UserAddress;
-import com.project.safetyFence.domain.dto.request.FenceInRequestDto;
-import com.project.safetyFence.domain.dto.request.GeofenceDeleteRequestDto;
-import com.project.safetyFence.repository.GeofenceRepository;
-import com.project.safetyFence.repository.UserRepository;
+import com.project.safetyFence.geofence.domain.Geofence;
+import com.project.safetyFence.user.domain.User;
+import com.project.safetyFence.user.domain.UserAddress;
+import com.project.safetyFence.geofence.dto.FenceInRequestDto;
+import com.project.safetyFence.geofence.dto.GeofenceDeleteRequestDto;
+import com.project.safetyFence.geofence.GeofenceRepository;
+import com.project.safetyFence.user.UserRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

@@ -1,10 +1,11 @@
 package com.project.safetyFence.service;
 
-import com.project.safetyFence.domain.User;
-import com.project.safetyFence.domain.UserLocation;
-import com.project.safetyFence.domain.dto.request.LocationUpdateDto;
-import com.project.safetyFence.repository.UserLocationRepository;
-import com.project.safetyFence.repository.UserRepository;
+import com.project.safetyFence.user.domain.User;
+import com.project.safetyFence.location.domain.UserLocation;
+import com.project.safetyFence.location.dto.LocationUpdateDto;
+import com.project.safetyFence.location.UserLocationRepository;
+import com.project.safetyFence.user.UserRepository;
+import com.project.safetyFence.location.LocationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

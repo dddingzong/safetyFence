@@ -1,6 +1,7 @@
 package com.project.safetyFence.service;
 
-import com.project.safetyFence.repository.LinkRepository;
+import com.project.safetyFence.link.LinkRepository;
+import com.project.safetyFence.link.LinkService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
