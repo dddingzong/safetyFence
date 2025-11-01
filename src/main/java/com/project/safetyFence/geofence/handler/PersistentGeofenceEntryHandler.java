@@ -9,13 +9,14 @@ import org.springframework.stereotype.Component;
  * 영구형 지오펜스 진입 처리 핸들러
  *
  * 영구형 지오펜스(type=0)에 진입하면 maxSequence를 차감합니다.
+ * 진입 로그는 BaseGeofenceEntryHandler에서 자동 저장됩니다.
  */
 @Slf4j
 @Component
-public class PersistentGeofenceEntryHandler implements GeofenceEntryHandler {
+public class PersistentGeofenceEntryHandler extends BaseGeofenceEntryHandler {
 
     @Override
-    public void handle(User user, Geofence geofence) {
+    protected void handleEntry(User user, Geofence geofence) {
         int currentMaxSequence = geofence.getMaxSequence();
         if (currentMaxSequence > 0) {
             geofence.decreaseMaxSequence();

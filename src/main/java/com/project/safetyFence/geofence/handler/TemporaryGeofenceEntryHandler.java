@@ -9,13 +9,14 @@ import org.springframework.stereotype.Component;
  * 일시형 지오펜스 진입 처리 핸들러
  *
  * 일시형 지오펜스(type=1)에 진입하면 해당 지오펜스를 삭제합니다.
+ * 진입 로그는 BaseGeofenceEntryHandler에서 자동 저장됩니다.
  */
 @Slf4j
 @Component
-public class TemporaryGeofenceEntryHandler implements GeofenceEntryHandler {
+public class TemporaryGeofenceEntryHandler extends BaseGeofenceEntryHandler {
 
     @Override
-    public void handle(User user, Geofence geofence) {
+    protected void handleEntry(User user, Geofence geofence) {
         user.removeGeofence(geofence);
         log.info("일시적인 지오펜스 진입: 지오펜스 ID {} 삭제됨.", geofence.getId());
     }
