@@ -67,6 +67,7 @@ public class LinkService {
         userRepository.save(user);
     }
 
+    @Transactional
     public void deleteLinkUser(String userNumber, String linkUserNumber) {
         User user = userRepository.findByNumberWithLinks(userNumber);
 
