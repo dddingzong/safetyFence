@@ -54,6 +54,7 @@ public class UserService {
             user.addGeofence(centerGeofence);
         }
 
+        // User 저장 시 cascade로 UserAddress, Geofence도 자동 저장됨
         userRepository.save(user);
 
         return user;
