@@ -35,8 +35,8 @@ public class GeofenceController {
             Long id = geofence.getId();
             String name = geofence.getName();
             String address = geofence.getAddress();
-            BigDecimal latitude = geofence.getLatitude();
-            BigDecimal longitude = geofence.getLongitude();
+            BigDecimal latitude = BigDecimal.valueOf(geofence.getLatitude());
+            BigDecimal longitude = BigDecimal.valueOf(geofence.getLongitude());
             int type = geofence.getType();
             LocalDateTime startTime = geofence.getStartTime();
             LocalDateTime endTime = geofence.getEndTime();
