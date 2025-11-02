@@ -84,8 +84,8 @@ class LocationServiceTest {
                 .untilAsserted(() -> {
                     List<UserLocation> locations = userLocationRepository.findAll();
                     assertThat(locations).hasSize(1);
-                    assertThat(locations.get(0).getLatitude()).isEqualByComparingTo(BigDecimal.valueOf(37.123456));
-                    assertThat(locations.get(0).getLongitude()).isEqualByComparingTo(BigDecimal.valueOf(127.123456));
+                    assertThat(locations.get(0).getLatitude()).isEqualTo(37.123456);
+                    assertThat(locations.get(0).getLongitude()).isEqualTo(127.123456);
                 });
     }
 
