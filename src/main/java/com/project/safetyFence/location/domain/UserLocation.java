@@ -22,7 +22,7 @@ public class UserLocation {
 
     // N:1 양방향 관계의 주인 (FK 관리)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Column(nullable = false, precision = 38, scale = 8)

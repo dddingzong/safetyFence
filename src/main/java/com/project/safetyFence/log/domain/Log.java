@@ -26,7 +26,7 @@ public class Log {
 
     // N:1 양방향 관계의 주인 (FK 관리)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     public Log(User user, String location, String locationAddress, LocalDateTime arriveTime) {
