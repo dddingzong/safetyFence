@@ -22,6 +22,7 @@ import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Type;
 import java.time.LocalDate;
@@ -72,10 +73,10 @@ class LocationSharingE2ETest {
     }
 
     @AfterEach
+    @Transactional
     void tearDown() {
-        userLocationRepository.deleteAll();
-        linkRepository.deleteAll();
-        userRepository.deleteAll();
+        // User를 먼저 조회한 후 삭제하면 Cascade가 제대로 작동함
+        userRepository.findAll().forEach(user -> userRepository.delete(user));
     }
 
     @Test
@@ -397,8 +398,13 @@ class LocationSharingE2ETest {
         User bob = createUser("bob", "밥", "LINK_B");
         User charlie = createUser("charlie", "찰리", "LINK_C");
 
-        linkRepository.save(new Link(alice, "bob", "친구"));
-        linkRepository.save(new Link(alice, "charlie", "친구"));
+        Link linkToBob = new Link(alice, "bob", "친구");
+        alice.addLink(linkToBob);
+        linkRepository.save(linkToBob);
+
+        Link linkToCharlie = new Link(alice, "charlie", "친구");
+        alice.addLink(linkToCharlie);
+        linkRepository.save(linkToCharlie);
 
         BlockingQueue<LocationUpdateDto> aliceQueueForBob = new LinkedBlockingQueue<>();
         BlockingQueue<LocationUpdateDto> aliceQueueForCharlie = new LinkedBlockingQueue<>();
