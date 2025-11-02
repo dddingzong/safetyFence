@@ -45,8 +45,11 @@ dependencies {
 	// json
 	implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.3'
 
-	// mysql
-	implementation 'mysql:mysql-connector-java:8.0.33'
+	// PostgreSQL
+    implementation 'org.postgresql:postgresql:42.7.1'
+
+	// Hibernate Spatial (PostGIS support)
+    implementation 'org.hibernate.orm:hibernate-spatial:6.6.15.Final'
 
 	// lombok
 	compileOnly 'org.projectlombok:lombok'
