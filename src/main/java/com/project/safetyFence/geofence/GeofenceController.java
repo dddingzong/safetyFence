@@ -49,6 +49,7 @@ public class GeofenceController {
         return ResponseEntity.ok(responseDtos);
     }
 
+    // TODO: 지오펜스 진입 처리 시 응답 관련 기능 추가 필요
     @PostMapping("/geofence/userFenceIn")
     public ResponseEntity<String> userFenceIn(@RequestBody FenceInRequestDto fenceInRequestDto,
                                              HttpServletRequest request) {
