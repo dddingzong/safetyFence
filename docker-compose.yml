@@ -86,6 +86,7 @@ services:
     # 볼륨: 데이터를 영구 저장 (컨테이너 삭제해도 데이터 유지)
     volumes:
       - db-data:/var/lib/postgresql/data  # Docker가 관리하는 볼륨
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d  # 초기화 스크립트
 
     # 포트 매핑 (외부에서 직접 DB 접속할 때 사용, 디버깅용)
     ports:
