@@ -9,6 +9,7 @@ import com.project.safetyFence.geofence.GeofenceService;
 
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -187,6 +188,7 @@ class GeofenceServiceTest {
 
     @Test
     @DisplayName("createNewFence - permanent geofence creation success")
+    @Disabled("실제 카카오 API 키가 필요하므로 기본적으로 비활성화되어 있습니다.")
     void createNewFence_PermanentGeofence_Success() {
         // given
         GeofenceRequestDto requestDto = new GeofenceRequestDto(
@@ -218,7 +220,7 @@ class GeofenceServiceTest {
     }
 
     @Test
-    @DisplayName("createNewFence - temporary geofence creation success")
+    @Disabled("실제 카카오 API 키가 필요하므로 기본적으로 비활성화되어 있습니다.")
     void createNewFence_TemporaryGeofence_Success() {
         // given
         String startTime = "2025-10-21T10:00:00";
