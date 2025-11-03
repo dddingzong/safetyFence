@@ -37,3 +37,26 @@ src/main/resources/application-test.properties
 
 ### VS Code ###
 .vscode/
+
+# ============================================
+# Docker & Deployment Security Files
+# ============================================
+# Environment variables file (contains real passwords, NEVER commit!)
+.env
+
+# SSL certificate files (sensitive data)
+nginx/ssl/
+*.pem
+*.key
+*.crt
+
+# ============================================
+# 기타
+# ============================================
+# 백업 파일
+*.bak
+*.backup
+
+# 로그 파일
+logs/
+*.log
