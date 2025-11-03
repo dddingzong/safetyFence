@@ -60,3 +60,6 @@ nginx/ssl/
 # 로그 파일
 logs/
 *.log
+
+# 배포가이드 파일
+claudedocs/DEPLOYMENT_GUIDE.md
