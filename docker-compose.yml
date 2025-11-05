@@ -58,7 +58,8 @@ services:
 
     # 의존성: db 컨테이너가 먼저 실행되어야 함
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
     restart: unless-stopped
 
@@ -81,10 +82,25 @@ services:
       - POSTGRES_USER=${SPRING_DATASOURCE_USERNAME}            # 사용자 이름 (.env에서)
       - POSTGRES_PASSWORD=${SPRING_DATASOURCE_PASSWORD}        # 비밀번호 (.env에서)
 
+    command: >
+      sh -c "
+        if [ -d /docker-entrypoint-initdb.d ]; then
+          if [ -w /docker-entrypoint-initdb.d ]; then
+            echo '🔧 Fixing safe permissions...';
+            find /docker-entrypoint-initdb.d -type f -exec chmod 644 {} ';'
+            find /docker-entrypoint-initdb.d -type d -exec chmod 755 {} ';'
+            chown -R 999:999 /docker-entrypoint-initdb.d || true;
+          else
+            echo '🔒 Read-only directory. Skipping permission fix.';
+          fi;
+        fi;
+        exec docker-entrypoint.sh postgres
+      "
+
     # 볼륨: 데이터를 영구 저장 (컨테이너 삭제해도 데이터 유지)
     volumes:
-      - db-data:/var/lib/postgresql/data  # Docker가 관리하는 볼륨
-      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d  # 초기화 스크립트
+      - db-data:/var/lib/postgresql/data
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
 
     # 포트 매핑 (외부에서 직접 DB 접속할 때 사용, 디버깅용)
     ports:
@@ -94,6 +110,12 @@ services:
 
     networks:
       - safetyfence-net
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME} -d safetyfence_db" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 # ============================================
 # 볼륨 정의
