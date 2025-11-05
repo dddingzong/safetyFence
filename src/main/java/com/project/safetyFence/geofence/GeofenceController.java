@@ -35,8 +35,8 @@ public class GeofenceController {
             Long id = geofence.getId();
             String name = geofence.getName();
             String address = geofence.getAddress();
-            BigDecimal latitude = geofence.getLatitude();
-            BigDecimal longitude = geofence.getLongitude();
+            BigDecimal latitude = BigDecimal.valueOf(geofence.getLatitude());
+            BigDecimal longitude = BigDecimal.valueOf(geofence.getLongitude());
             int type = geofence.getType();
             LocalDateTime startTime = geofence.getStartTime();
             LocalDateTime endTime = geofence.getEndTime();
@@ -49,6 +49,7 @@ public class GeofenceController {
         return ResponseEntity.ok(responseDtos);
     }
 
+    // TODO: 지오펜스 진입 처리 시 응답 관련 기능 추가 필요
     @PostMapping("/geofence/userFenceIn")
     public ResponseEntity<String> userFenceIn(@RequestBody FenceInRequestDto fenceInRequestDto,
                                              HttpServletRequest request) {

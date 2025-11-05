@@ -1,0 +1,136 @@
+services:
+  # ============================================
+  # 1. Nginx 리버스 프록시 서버
+  # ============================================
+  nginx:
+    image: nginx:stable-alpine  # 경량화된 nginx 이미지 사용
+    container_name: safetyfence-nginx
+
+    # 포트 매핑: "호스트포트:컨테이너포트"
+    ports:
+      - "80:80"    # HTTP - 외부 80번 포트를 컨테이너 80번으로 연결
+      - "443:443"  # HTTPS - SSL 설정 후 사용 (처음엔 사용 안함)
+
+    # 볼륨 마운트: 로컬 파일을 컨테이너 안으로 연결
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf  # Nginx 설정 파일
+      - ./nginx/ssl:/etc/nginx/ssl                # SSL 인증서 폴더 (나중에 생김)
+
+    # 의존성: app 컨테이너가 먼저 실행되어야 함
+    depends_on:
+      - app
+
+    # 재시작 정책: 컨테이너가 죽으면 자동으로 재시작 (수동 중지 제외)
+    restart: unless-stopped
+
+    # 네트워크: 같은 네트워크에 있어야 컨테이너끼리 통신 가능
+    networks:
+      - safetyfence-net
+
+  # ============================================
+  # 2. Spring Boot 애플리케이션 서버
+  # ============================================
+  app:
+    # Dockerfile을 이용해서 이미지 빌드
+    build:
+      context: .              # 현재 디렉토리에서
+      dockerfile: Dockerfile  # Dockerfile을 찾아서 빌드
+
+    container_name: safetyfence-app
+
+    # 포트 매핑
+    ports:
+      - "8080:8080"  # Spring Boot 기본 포트
+
+    # 환경 변수: 애플리케이션 실행 시 사용되는 변수들
+    environment:
+      # 프로덕션 모드로 실행 (application-prod.properties 사용)
+      - SPRING_PROFILES_ACTIVE=prod
+
+      # 데이터베이스 연결 정보
+      # db:5432 - 'db'는 아래 PostgreSQL 컨테이너 이름
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/safetyfence_db
+
+      # .env 파일에서 가져올 값들 (${변수명} 형식)
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      - KAKAO_API_KEY=${KAKAO_API_KEY}
+
+    # 의존성: db 컨테이너가 먼저 실행되어야 함
+    depends_on:
+      db:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+    networks:
+      - safetyfence-net
+
+  # ============================================
+  # 3. PostgreSQL + PostGIS 데이터베이스
+  # ============================================
+  db:
+    # PostGIS가 포함된 PostgreSQL 이미지
+    # 15 = PostgreSQL 버전, 3.3 = PostGIS 버전
+    image: postgis/postgis:15-3.3-alpine
+
+    container_name: safetyfence-db
+
+    # 데이터베이스 초기 설정
+    environment:
+      - POSTGRES_DB=safetyfence_db              # 생성할 데이터베이스 이름
+      - POSTGRES_USER=${SPRING_DATASOURCE_USERNAME}            # 사용자 이름 (.env에서)
+      - POSTGRES_PASSWORD=${SPRING_DATASOURCE_PASSWORD}        # 비밀번호 (.env에서)
+
+    command: >
+      sh -c "
+        if [ -d /docker-entrypoint-initdb.d ]; then
+          if [ -w /docker-entrypoint-initdb.d ]; then
+            echo '🔧 Fixing safe permissions...';
+            find /docker-entrypoint-initdb.d -type f -exec chmod 644 {} ';'
+            find /docker-entrypoint-initdb.d -type d -exec chmod 755 {} ';'
+            chown -R 999:999 /docker-entrypoint-initdb.d || true;
+          else
+            echo '🔒 Read-only directory. Skipping permission fix.';
+          fi;
+        fi;
+        exec docker-entrypoint.sh postgres
+      "
+
+    # 볼륨: 데이터를 영구 저장 (컨테이너 삭제해도 데이터 유지)
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+
+    # 포트 매핑 (외부에서 직접 DB 접속할 때 사용, 디버깅용)
+    ports:
+      - "5432:5432"
+
+    restart: unless-stopped
+
+    networks:
+      - safetyfence-net
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME} -d safetyfence_db" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+# ============================================
+# 볼륨 정의
+# ============================================
+# Docker가 관리하는 영구 저장소
+# 컨테이너를 삭제해도 이 볼륨의 데이터는 유지됨
+volumes:
+  db-data:
+    # docker volume ls 명령어로 확인 가능
+
+# ============================================
+# 네트워크 정의
+# ============================================
+# 같은 네트워크에 있는 컨테이너끼리만 통신 가능
+# 컨테이너 이름으로 서로 찾을 수 있음 (예: app -> db:5432)
+networks:
+  safetyfence-net:
+    driver: bridge  # 기본 네트워크 드라이버

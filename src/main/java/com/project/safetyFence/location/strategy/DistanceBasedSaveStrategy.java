@@ -23,8 +23,8 @@ public class DistanceBasedSaveStrategy implements LocationSaveStrategy {
 
         // 거리 계산
         double distance = calculateDistance(
-                previous.getLatitude().doubleValue(),
-                previous.getLongitude().doubleValue(),
+                previous.getLatitude(),
+                previous.getLongitude(),
                 current.getLatitude(),
                 current.getLongitude()
         );

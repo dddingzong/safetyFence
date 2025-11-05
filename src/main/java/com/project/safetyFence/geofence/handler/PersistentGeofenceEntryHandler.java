@@ -20,10 +20,10 @@ public class PersistentGeofenceEntryHandler extends BaseGeofenceEntryHandler {
         int currentMaxSequence = geofence.getMaxSequence();
         if (currentMaxSequence > 0) {
             geofence.decreaseMaxSequence();
-            log.info("지속적인 지오펜스 진입: 지오펜스 ID {}의 maxSequence 차감됨. (현재: {})",
+            log.info("영구 지오펜스 진입: 지오펜스 ID {}의 maxSequence 차감됨. (현재: {})",
                     geofence.getId(), geofence.getMaxSequence());
         } else {
-            log.info("지속적인 지오펜스 진입: 지오펜스 ID {}의 maxSequence가 이미 0입니다.",
+            log.info("영구 지오펜스 진입: 지오펜스 ID {}의 maxSequence가 이미 0입니다.",
                     geofence.getId());
         }
     }
