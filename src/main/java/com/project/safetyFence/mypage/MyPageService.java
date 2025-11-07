@@ -21,6 +21,7 @@ public class MyPageService {
 
     private final UserRepository userRepository;
 
+    @Transactional(readOnly = true)
     public UserDataResponseDto getUserData(String number) {
         User user = userRepository.findByNumber(number);
         String name = user.getName();

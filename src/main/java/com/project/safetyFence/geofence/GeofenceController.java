@@ -7,6 +7,7 @@ import com.project.safetyFence.geofence.dto.GeofenceRequestDto;
 import com.project.safetyFence.geofence.dto.GeofenceResponseDto;
 import com.project.safetyFence.geofence.GeofenceService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -59,7 +60,7 @@ public class GeofenceController {
     }
 
     @PostMapping("/geofence/newFence")
-    public ResponseEntity<String> createNewFence(@RequestBody GeofenceRequestDto geofenceRequestDto,
+    public ResponseEntity<String> createNewFence(@Valid @RequestBody GeofenceRequestDto geofenceRequestDto,
                                                  HttpServletRequest request) {
         String userNumber = (String) request.getAttribute("userNumber");
         geofenceService.createNewFence(userNumber, geofenceRequestDto);
