@@ -1,8 +1,9 @@
 # Safety Fence API 명세서
 
 > **프로젝트**: Safety Fence - 실시간 위치 추적 및 지오펜스 시스템
-> **버전**: 1.0
+> **버전**: 1.1
 > **작성일**: 2025-10-25
+> **최종 수정**: 2025-01-06
 
 ## 목차
 1. [인증 및 사용자 관리 API](#1-인증-및-사용자-관리-api)
@@ -165,7 +166,7 @@ const Login = () => {
       alert(`${name}님, 환영합니다!`);
 
       // 이후 모든 요청에 헤더 추가
-      axios.defaults.headers.common['apiKey'] = apiKey;
+      axios.defaults.headers.common['X-API-Key'] = apiKey;
 
     } catch (error) {
       console.error('로그인 실패:', error.response?.data);
@@ -205,7 +206,7 @@ const Login = () => {
 
 **Headers**:
 ```
-apiKey: your-api-key
+X-API-Key: your-api-key
 ```
 
 **Response**:
@@ -240,7 +241,7 @@ const LinkList = () => {
     try {
       const apiKey = localStorage.getItem('apiKey');
       const response = await axios.get('/link/list', {
-        headers: { apiKey }
+        headers: { 'X-API-Key': apiKey }
       });
       setLinks(response.data);
     } catch (error) {
@@ -273,7 +274,7 @@ const LinkList = () => {
 
 **Headers**:
 ```
-apiKey: your-api-key
+X-API-Key: your-api-key
 ```
 
 **Request Body**:
@@ -306,7 +307,7 @@ const AddLink = () => {
     try {
       const apiKey = localStorage.getItem('apiKey');
       const response = await axios.post('/link/addUser', linkData, {
-        headers: { apiKey }
+        headers: { 'X-API-Key': apiKey }
       });
 
       alert('링크가 추가되었습니다.');
@@ -348,7 +349,7 @@ const AddLink = () => {
 
 **Headers**:
 ```
-apiKey: your-api-key
+X-API-Key: your-api-key
 ```
 
 **Request Body**:
@@ -375,7 +376,7 @@ const DeleteLink = ({ userNumber, onDeleted }) => {
     try {
       const apiKey = localStorage.getItem('apiKey');
       await axios.delete('/link/deleteUser', {
-        headers: { apiKey },
+        headers: { 'X-API-Key': apiKey },
         data: { number: userNumber }
       });
 
@@ -406,7 +407,7 @@ const DeleteLink = ({ userNumber, onDeleted }) => {
 
 **Headers**:
 ```
-apiKey: your-api-key
+X-API-Key: your-api-key
 ```
 
 **Request Body**:
@@ -467,7 +468,7 @@ const GeofenceList = () => {
 
       const response = await axios.post('/geofence/list',
         { number: userNumber },
-        { headers: { apiKey } }
+        { headers: { 'X-API-Key': apiKey } }
       );
 
       setGeofences(response.data);
@@ -508,7 +509,7 @@ const GeofenceList = () => {
 
 **Headers**:
 ```
-apiKey: your-api-key
+X-API-Key: your-api-key
 ```
 
 **Request Body**:
@@ -571,7 +572,7 @@ const CreateGeofence = () => {
         : fenceData;
 
       const response = await axios.post('/geofence/newFence', requestData, {
-        headers: { apiKey }
+        headers: { 'X-API-Key': apiKey }
       });
 
       console.log('지오펜스 생성 성공:', response.data);
@@ -636,7 +637,7 @@ const CreateGeofence = () => {
 
 **Headers**:
 ```
-apiKey: your-api-key
+X-API-Key: your-api-key
 ```
 
 **Request Body**:
@@ -663,7 +664,7 @@ const RecordFenceEntry = () => {
 
       await axios.post('/geofence/userFenceIn',
         { geofenceId },
-        { headers: { apiKey } }
+        { headers: { 'X-API-Key': apiKey } }
       );
 
       console.log(`지오펜스 ${geofenceId} 진입 기록됨`);
@@ -714,7 +715,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 **Headers**:
 ```
-apiKey: your-api-key
+X-API-Key: your-api-key
 ```
 
 **Request Body**:
@@ -742,7 +743,7 @@ const DeleteGeofence = ({ geofenceId, onDeleted }) => {
       const apiKey = localStorage.getItem('apiKey');
 
       await axios.delete('/geofence/deleteFence', {
-        headers: { apiKey },
+        headers: { 'X-API-Key': apiKey },
         data: { id: geofenceId }
       });
 
@@ -773,7 +774,7 @@ const DeleteGeofence = ({ geofenceId, onDeleted }) => {
 
 **Headers**:
 ```
-apiKey: your-api-key
+X-API-Key: your-api-key
 ```
 
 **Response**:
@@ -810,7 +811,7 @@ const LogHistory = () => {
     try {
       const apiKey = localStorage.getItem('apiKey');
       const response = await axios.get('/logs', {
-        headers: { apiKey }
+        headers: { 'X-API-Key': apiKey }
       });
       setLogs(response.data);
     } catch (error) {
@@ -856,7 +857,7 @@ const LogHistory = () => {
 
 **Headers**:
 ```
-apiKey: your-api-key
+X-API-Key: your-api-key
 ```
 
 **Query Parameters**:
@@ -911,7 +912,7 @@ const Calendar = () => {
     try {
       const apiKey = localStorage.getItem('apiKey');
       const response = await axios.get('/calendar/userData', {
-        headers: { apiKey },
+        headers: { 'X-API-Key': apiKey },
         params: { date }
       });
       setDayData(response.data);
@@ -986,7 +987,7 @@ const Calendar = () => {
 
 **Headers**:
 ```
-apiKey: your-api-key
+X-API-Key: your-api-key
 ```
 
 **Request Body**:
@@ -1022,7 +1023,7 @@ const AddEvent = () => {
       const apiKey = localStorage.getItem('apiKey');
 
       await axios.post('/calendar/addEvent', eventData, {
-        headers: { apiKey }
+        headers: { 'X-API-Key': apiKey }
       });
 
       alert('이벤트가 추가되었습니다.');
@@ -1068,7 +1069,7 @@ const AddEvent = () => {
 
 **Headers**:
 ```
-apiKey: your-api-key
+X-API-Key: your-api-key
 ```
 
 **Query Parameters**:
@@ -1097,7 +1098,7 @@ const DeleteEvent = ({ eventId, onDeleted }) => {
       const apiKey = localStorage.getItem('apiKey');
 
       await axios.delete('/calendar/deleteEvent', {
-        headers: { apiKey },
+        headers: { 'X-API-Key': apiKey },
         params: { userEventId: eventId }
       });
 
@@ -1128,7 +1129,7 @@ const DeleteEvent = ({ eventId, onDeleted }) => {
 
 **Headers**:
 ```
-apiKey: your-api-key
+X-API-Key: your-api-key
 ```
 
 **Response**:
@@ -1168,7 +1169,7 @@ const MyPage = () => {
     try {
       const apiKey = localStorage.getItem('apiKey');
       const response = await axios.get('/get/myPageData', {
-        headers: { apiKey }
+        headers: { 'X-API-Key': apiKey }
       });
       setUserData(response.data);
     } catch (error) {
@@ -1214,7 +1215,7 @@ const MyPage = () => {
 
 **Headers**:
 ```
-apiKey: your-api-key
+X-API-Key: your-api-key
 ```
 
 **Request Body**:
@@ -1257,7 +1258,7 @@ const ChangePassword = () => {
         currentPassword: passwords.currentPassword,
         newPassword: passwords.newPassword
       }, {
-        headers: { apiKey }
+        headers: { 'X-API-Key': apiKey }
       });
 
       alert('비밀번호가 변경되었습니다.');
@@ -1305,7 +1306,7 @@ const ChangePassword = () => {
 
 **Headers**:
 ```
-apiKey: your-api-key
+X-API-Key: your-api-key
 ```
 
 **Request Body**:
@@ -1341,7 +1342,7 @@ const UpdateHomeAddress = () => {
       const apiKey = localStorage.getItem('apiKey');
 
       await axios.patch('/mypage/homeAddress', address, {
-        headers: { apiKey }
+        headers: { 'X-API-Key': apiKey }
       });
 
       alert('집 주소가 변경되었습니다.');
@@ -1388,7 +1389,7 @@ const UpdateHomeAddress = () => {
 
 **Headers**:
 ```
-apiKey: your-api-key
+X-API-Key: your-api-key
 ```
 
 **Request Body**:
@@ -1422,7 +1423,7 @@ const UpdateCenterAddress = () => {
       const apiKey = localStorage.getItem('apiKey');
 
       await axios.patch('/mypage/centerAddress', centerAddress, {
-        headers: { apiKey }
+        headers: { 'X-API-Key': apiKey }
       });
 
       alert('센터 주소가 변경되었습니다.');
@@ -1754,7 +1755,7 @@ const MultipleLocationTracker = () => {
     try {
       const apiKey = localStorage.getItem('apiKey');
       const response = await axios.get('/link/list', {
-        headers: { apiKey }
+        headers: { 'X-API-Key': apiKey }
       });
       setFriends(response.data);
     } catch (error) {
@@ -1886,7 +1887,7 @@ const RealTimeMapTracker = () => {
     try {
       const apiKey = localStorage.getItem('apiKey');
       const response = await axios.get('/link/list', {
-        headers: { apiKey }
+        headers: { 'X-API-Key': apiKey }
       });
       setFriends(response.data);
     } catch (error) {
@@ -2022,7 +2023,7 @@ const CompleteLocationApp = () => {
     try {
       const apiKey = localStorage.getItem('apiKey');
       const response = await axios.get('/link/list', {
-        headers: { apiKey }
+        headers: { 'X-API-Key': apiKey }
       });
       setFriends(response.data);
     } catch (error) {
@@ -2342,7 +2343,7 @@ const CompleteFlow = () => {
       localStorage.setItem('userName', name);
 
       // Axios 기본 헤더 설정
-      axios.defaults.headers.common['apiKey'] = apiKey;
+      axios.defaults.headers.common['X-API-Key'] = apiKey;
 
       return true;
     } catch (error) {
@@ -2445,7 +2446,7 @@ instance.interceptors.request.use(
   config => {
     const apiKey = localStorage.getItem('apiKey');
     if (apiKey) {
-      config.headers.apiKey = apiKey;
+      config.headers['X-API-Key'] = apiKey;
     }
     return config;
   },
@@ -2467,9 +2468,25 @@ export default instance;
 
 ## 문서 정보
 
-- **마지막 업데이트**: 2025-10-25
-- **API 버전**: 1.0
+- **마지막 업데이트**: 2025-01-06
+- **API 버전**: 1.1
 - **작성자**: Safety Fence 개발팀
 - **문의**: 개발팀 이메일
+
+---
+
+## 📝 변경 이력
+
+### v1.1 (2025-01-06)
+- **중요**: 인증 헤더 이름 수정 - `apiKey` → `X-API-Key`
+- 백엔드 AuthInterceptor 구현에 맞춰 정확한 헤더 이름으로 변경
+- 모든 API 예시 코드에서 헤더 사용법 업데이트
+- Axios 인터셉터 예시 코드 수정
+
+### v1.0 (2025-10-25)
+- 최초 작성
+- 전체 API 엔드포인트 문서화
+- React/Axios 통합 예시 추가
+- WebSocket 실시간 위치 공유 가이드 추가
 
 ---
