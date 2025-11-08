@@ -73,10 +73,18 @@ public class GeofenceService implements InitialGeofenceCreator {
     public void userFenceIn(String userNumber, Long geofenceId) {
         User user = userRepository.findByNumberWithGeofences(userNumber);
 
+        // 디버깅을 위한 로그
+        List<Long> userGeofenceIds = user.getGeofences().stream()
+                .map(Geofence::getId)
+                .toList();
+        log.info("사용자 {}의 Geofence ID 목록: {}, 요청된 ID: {}", userNumber, userGeofenceIds, geofenceId);
+
         Geofence geofence = user.getGeofences().stream()
                 .filter(g -> g.getId().equals(geofenceId))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Geofence not found"));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        String.format("Geofence not found - 사용자: %s, 요청 ID: %d, 보유 ID 목록: %s",
+                                userNumber, geofenceId, userGeofenceIds)));
 
         // 전략 패턴 적용: 타입에 맞는 핸들러 찾아서 실행
         GeofenceEntryHandler handler = entryHandlers.stream()
@@ -106,6 +114,14 @@ public class GeofenceService implements InitialGeofenceCreator {
                     999
             );
         } else { // 일시 지오펜스
+            // "09:00" 형식의 시간을 오늘 날짜와 결합하여 LocalDateTime으로 변환
+            java.time.LocalDate today = java.time.LocalDate.now();
+            java.time.LocalTime startLocalTime = java.time.LocalTime.parse(geofenceRequestDto.getStartTime());
+            java.time.LocalTime endLocalTime = java.time.LocalTime.parse(geofenceRequestDto.getEndTime());
+
+            java.time.LocalDateTime startDateTime = java.time.LocalDateTime.of(today, startLocalTime);
+            java.time.LocalDateTime endDateTime = java.time.LocalDateTime.of(today, endLocalTime);
+
             geofence = new Geofence(
                     user,
                     geofenceRequestDto.getName(),
@@ -113,8 +129,8 @@ public class GeofenceService implements InitialGeofenceCreator {
                     coordinate.getLatitude(),
                     coordinate.getLongitude(),
                     1,
-                    java.time.LocalDateTime.parse(geofenceRequestDto.getStartTime()),
-                    java.time.LocalDateTime.parse(geofenceRequestDto.getEndTime()),
+                    startDateTime,
+                    endDateTime,
                     100
             );
         }
