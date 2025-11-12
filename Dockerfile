@@ -17,9 +17,10 @@ WORKDIR /app
 # ============================================
 # 3. JAR 파일 복사
 # ============================================
-# 로컬의 build/libs/*.jar 파일을 컨테이너의 /app/app.jar로 복사
-# Gradle 빌드 후 생성되는 JAR 파일을 이미지에 포함
-COPY build/libs/*.jar app.jar
+# 로컬의 build/libs/safetyFence-0.0.2-SNAPSHOT.jar 파일을 컨테이너의 /app/app.jar로 복사
+# Gradle 빌드 후 생성되는 실행 가능한 JAR 파일을 이미지에 포함
+# plain.jar는 의존성이 없으므로 제외
+COPY build/libs/safetyFence-0.0.2-SNAPSHOT.jar app.jar
 
 # ============================================
 # 4. 포트 노출
