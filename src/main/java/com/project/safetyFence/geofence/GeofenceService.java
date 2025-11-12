@@ -77,14 +77,11 @@ public class GeofenceService implements InitialGeofenceCreator {
         List<Long> userGeofenceIds = user.getGeofences().stream()
                 .map(Geofence::getId)
                 .toList();
-        log.info("사용자 {}의 Geofence ID 목록: {}, 요청된 ID: {}", userNumber, userGeofenceIds, geofenceId);
 
         Geofence geofence = user.getGeofences().stream()
                 .filter(g -> g.getId().equals(geofenceId))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        String.format("Geofence not found - 사용자: %s, 요청 ID: %d, 보유 ID 목록: %s",
-                                userNumber, geofenceId, userGeofenceIds)));
+                .orElseThrow(() -> new IllegalArgumentException("Geofence not found"));
 
         // 전략 패턴 적용: 타입에 맞는 핸들러 찾아서 실행
         GeofenceEntryHandler handler = entryHandlers.stream()

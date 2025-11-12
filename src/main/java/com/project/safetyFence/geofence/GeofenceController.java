@@ -58,8 +58,6 @@ public class GeofenceController {
     public ResponseEntity<String> userFenceIn(@RequestBody FenceInRequestDto fenceInRequestDto,
                                              HttpServletRequest request) {
         String userNumber = (String) request.getAttribute("userNumber");
-        log.info("[userFenceIn] 요청 - 사용자: {}, DTO: {}, geofenceId: {}",
-                userNumber, fenceInRequestDto, fenceInRequestDto.getGeofenceId());
         geofenceService.userFenceIn(userNumber, fenceInRequestDto.getGeofenceId());
         return ResponseEntity.ok("사용자의 진입이 성공적으로 감지되었습니다.");
     }
