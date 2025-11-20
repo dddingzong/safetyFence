@@ -54,7 +54,7 @@
 │         │ GET /links        │ STOMP Protocol     │          │
 └─────────┼───────────────────┼────────────────────┼──────────┘
           │                   │                    │
-          ▼                   ▼                    │
+          ▼                   ▼                    │ 
 ┌─────────────────────────────────────────────────────────────┐
 │                   Spring Boot Server                         │
 │                                                               │
@@ -150,15 +150,16 @@
 - **Lombok** (보일러플레이트 코드 제거)
 
 ### Frontend (권장)
-- **React** (UI)
+- **React Native** (모바일 UI)
 - **@stomp/stompjs** (STOMP 클라이언트)
-- **sockjs-client** (SockJS 폴백)
+- **네이티브 WebSocket** (React Native 기본 지원)
 - **Google Maps API** 또는 **Kakao Map API** (지도 표시)
 
 ### Protocol
 - **WebSocket**: 양방향 실시간 통신
 - **STOMP**: Simple Text Oriented Messaging Protocol
-- **SockJS**: WebSocket 미지원 브라우저 폴백
+- **HTTP POST**: 백그라운드 폴백 메커니즘
+- **Heartbeat**: 10초 주기 연결 상태 확인
 
 ---
 
@@ -192,7 +193,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         // 클라이언트가 구독할 prefix
-        config.enableSimpleBroker("/topic");
+        config.enableSimpleBroker("/topic")
+                .setHeartbeatValue(new long[]{10000, 10000});  // 10초마다 heartbeat (연결 유지)
 
         // 클라이언트가 메시지 보낼 prefix
         config.setApplicationDestinationPrefixes("/app");
@@ -200,10 +202,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // WebSocket 연결 엔드포인트
+        // React Native용 네이티브 WebSocket 엔드포인트
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")  // 개발: 모든 origin 허용
-                .withSockJS();  // SockJS fallback
+                .setAllowedOriginPatterns("*");  // 모든 origin 허용 (SockJS 제거)
     }
 
     @Override
@@ -218,7 +219,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 - `/topic/*`: 구독 엔드포인트 (클라이언트 → 서버)
 - `/app/*`: 발행 엔드포인트 (서버 → 클라이언트)
 - `/ws`: WebSocket 연결 엔드포인트
-- `withSockJS()`: 구형 브라우저 지원
+- **Heartbeat**: 10초마다 연결 상태 확인 (모바일 환경 최적화)
+- **SockJS 제거**: React Native는 네이티브 WebSocket 지원으로 SockJS 불필요
 
 ### 3. 인증 인터셉터
 
@@ -378,40 +380,86 @@ public class LocationCacheService {
 
 #### LocationWebSocketController.java
 
-##### 6-1. 위치 전송 처리
+##### 6-1. 위치 전송 처리 (WebSocket)
 ```java
 @MessageMapping("/location")
 public void updateLocation(
         LocationUpdateDto location,
         @Header("simpSessionAttributes") Map<String, Object> sessionAttributes
 ) {
-    // 1. 세션에서 사용자 번호 추출
+    // 세션에서 사용자 번호 추출
     String userNumber = (String) sessionAttributes.get("userNumber");
-    location.setUserNumber(userNumber);
-    location.setTimestamp(System.currentTimeMillis());
 
-    // 2. 캐시 업데이트
-    cacheService.updateLocation(userNumber, location);
+    if (userNumber == null) {
+        log.error("세션에 userNumber가 없습니다.");
+        return;
+    }
 
-    // 3. 구독자들에게 브로드캐스트
-    messagingTemplate.convertAndSend(
-        "/topic/location/" + userNumber,
-        location
-    );
-
-    // 4. 비동기 DB 저장
-    locationService.saveLocationIfNeeded(location);
+    // 공통 처리 로직 호출
+    processLocationUpdate(userNumber, location);
 }
 ```
 
 **동작 흐름**:
 1. 클라이언트가 `/app/location`으로 위치 전송
 2. 서버가 세션에서 `userNumber` 추출
-3. 캐시에 최신 위치 저장
-4. `/topic/location/{userNumber}` 구독자들에게 브로드캐스트
-5. 조건 충족 시 비동기로 DB 저장
+3. 공통 처리 로직으로 위임
 
-##### 6-2. 구독 이벤트 처리 (WebSocketEventListener)
+##### 6-2. 위치 전송 처리 (HTTP POST - 백그라운드 폴백)
+```java
+@PostMapping("/location")
+public ResponseEntity<Void> updateLocationHttp(
+        @RequestBody LocationUpdateDto location,
+        @RequestHeader String userNumber
+) {
+    if (userNumber == null || userNumber.isBlank()) {
+        log.error("HTTP POST 위치 업데이트 실패: userNumber가 없습니다.");
+        return ResponseEntity.badRequest().build();
+    }
+
+    log.debug("HTTP POST 위치 업데이트 수신 (백그라운드): userNumber={}, lat={}, lng={}",
+            userNumber, location.getLatitude(), location.getLongitude());
+
+    // 공통 처리 로직 호출
+    processLocationUpdate(userNumber, location);
+
+    return ResponseEntity.ok().build();
+}
+```
+
+**사용 시나리오**:
+- 모바일 앱이 백그라운드 상태로 전환될 때 WebSocket 연결이 끊김
+- HTTP POST로 주기적 위치 전송 (폴백 메커니즘)
+- 앱이 포그라운드로 복귀하면 다시 WebSocket 연결
+
+##### 6-3. 공통 처리 로직
+```java
+private void processLocationUpdate(String userNumber, LocationUpdateDto location) {
+    // DTO에 사용자 정보 설정
+    location.setUserNumber(userNumber);
+    location.setTimestamp(System.currentTimeMillis());
+
+    // 1. 캐시에 최신 위치 저장
+    cacheService.updateLocation(userNumber, location);
+
+    // 2. 해당 사용자를 구독 중인 모든 클라이언트에게 전송
+    messagingTemplate.convertAndSend(
+        "/topic/location/" + userNumber,
+        location
+    );
+
+    // 3. 조건부 DB 저장 (비동기)
+    locationService.saveLocationIfNeeded(location);
+}
+```
+
+**공통 처리 흐름**:
+1. 사용자 정보 및 타임스탬프 설정
+2. 캐시에 최신 위치 저장
+3. `/topic/location/{userNumber}` 구독자들에게 브로드캐스트
+4. 조건 충족 시 비동기로 DB 저장
+
+##### 6-4. 구독 이벤트 처리 (WebSocketEventListener)
 ```java
 @EventListener
 public void handleWebSocketSubscribeListener(SessionSubscribeEvent event) {
@@ -976,7 +1024,7 @@ const client = new Client({
 
 ---
 
-#### 2. 위치 전송
+#### 2. 위치 전송 (WebSocket)
 
 ```
 SEND /app/location
@@ -1006,6 +1054,48 @@ SEND /app/location
 **주의사항**:
 - `userNumber`는 클라이언트가 보내지 않음 (서버가 세션에서 자동 추출)
 - `timestamp`도 서버에서 자동 설정
+
+---
+
+#### 2-1. 위치 전송 (HTTP POST - 백그라운드 폴백)
+
+```
+POST /location
+```
+
+**Request Headers**:
+| Header | Type | Required | Description |
+|--------|------|----------|-------------|
+| userNumber | String | ✅ Yes | 사용자 번호 |
+
+**Request Body**:
+```json
+{
+  "latitude": 37.123456,
+  "longitude": 127.123456
+}
+```
+
+**Parameters**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| latitude | Double | ✅ Yes | 위도 (-90 ~ 90) |
+| longitude | Double | ✅ Yes | 경도 (-180 ~ 180) |
+
+**사용 시나리오**:
+- 모바일 앱이 백그라운드 상태일 때 WebSocket 연결이 끊김
+- HTTP POST로 위치 전송 (폴백 메커니즘)
+- 포그라운드 복귀 시 WebSocket 재연결
+
+**Response**:
+- **200 OK**: 위치 업데이트 성공
+- **400 Bad Request**: userNumber 누락
+
+**처리 과정**:
+1. 헤더에서 `userNumber` 추출
+2. WebSocket과 동일한 공통 처리 로직 실행
+3. 캐시 업데이트 및 브로드캐스트
+4. 조건부 DB 저장
 
 ---
 
@@ -1079,18 +1169,18 @@ Headers:
 
 ## Frontend 통합 가이드
 
-### 1. 설치
+### 1. 설치 (React Native)
 
 ```bash
-npm install @stomp/stompjs sockjs-client
+npm install @stomp/stompjs
+# React Native는 네이티브 WebSocket을 기본 지원하므로 sockjs-client 불필요
 ```
 
-### 2. WebSocket 서비스 구현
+### 2. WebSocket 서비스 구현 (React Native)
 
 ```javascript
 // locationWebSocket.js
 import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 
 class LocationWebSocketService {
   constructor() {
@@ -1099,17 +1189,19 @@ class LocationWebSocketService {
   }
 
   /**
-   * WebSocket 연결
+   * WebSocket 연결 (React Native 네이티브 WebSocket 사용)
    */
   connect(userNumber, onConnected) {
-    const socket = new SockJS('http://localhost:8080/ws');
-
     this.client = new Client({
-      webSocketFactory: () => socket,
+      brokerURL: 'ws://localhost:8080/ws',  // React Native는 네이티브 WebSocket 사용
 
       connectHeaders: {
         userNumber: userNumber  // 인증 정보
       },
+
+      // Heartbeat 설정 (서버와 동일하게 10초)
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
 
       onConnect: () => {
         console.log('✅ WebSocket 연결 성공');
@@ -1122,10 +1214,54 @@ class LocationWebSocketService {
 
       onWebSocketError: (event) => {
         console.error('❌ WebSocket 에러:', event);
+      },
+
+      onWebSocketClose: () => {
+        console.warn('⚠️ WebSocket 연결 종료');
+        // 백그라운드 폴백 로직 실행
+        this.startHttpFallback(userNumber);
       }
     });
 
     this.client.activate();
+  }
+
+  /**
+   * 백그라운드 폴백: HTTP POST로 위치 전송
+   */
+  startHttpFallback(userNumber) {
+    if (this.fallbackInterval) {
+      clearInterval(this.fallbackInterval);
+    }
+
+    this.fallbackInterval = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          fetch('http://localhost:8080/location', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'userNumber': userNumber
+            },
+            body: JSON.stringify({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            })
+          }).catch(err => console.error('HTTP POST 실패:', err));
+        },
+        (error) => console.error('위치 조회 실패:', error)
+      );
+    }, 2000);
+  }
+
+  /**
+   * 백그라운드 폴백 중지
+   */
+  stopHttpFallback() {
+    if (this.fallbackInterval) {
+      clearInterval(this.fallbackInterval);
+      this.fallbackInterval = null;
+    }
   }
 
   /**
@@ -1184,6 +1320,7 @@ class LocationWebSocketService {
    */
   disconnect() {
     this.unsubscribe();
+    this.stopHttpFallback();  // 백그라운드 폴백 중지
     this.client?.deactivate();
     console.log('🔌 WebSocket 연결 종료');
   }
@@ -1397,19 +1534,20 @@ cd /Users/chungjongin/Desktop/forProject/safetyFence
 
 ### 2. WebSocket 연결 테스트
 
-#### Chrome DevTools Console
+#### Chrome DevTools Console (브라우저 테스트)
 ```javascript
-// 1. SockJS + STOMP 라이브러리 CDN 추가 (HTML)
-// <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+// 1. STOMP 라이브러리 CDN 추가 (HTML)
 // <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
 
-// 2. 연결 테스트
-const socket = new SockJS('http://localhost:8080/ws');
-const client = StompJs.Stomp.over(() => socket);
-
-client.connect(
-  { userNumber: 'testUser123' },
-  () => {
+// 2. 연결 테스트 (네이티브 WebSocket 사용)
+const client = new StompJs.Client({
+  brokerURL: 'ws://localhost:8080/ws',
+  connectHeaders: {
+    userNumber: 'testUser123'
+  },
+  heartbeatIncoming: 10000,
+  heartbeatOutgoing: 10000,
+  onConnect: () => {
     console.log('✅ 연결 성공!');
 
     // 구독 테스트
@@ -1426,10 +1564,36 @@ client.connect(
       })
     });
   },
-  (error) => {
-    console.error('❌ 연결 실패:', error);
+  onStompError: (frame) => {
+    console.error('❌ STOMP 에러:', frame.headers['message']);
   }
-);
+});
+
+client.activate();
+```
+
+#### HTTP POST 테스트 (백그라운드 폴백)
+```javascript
+// 백그라운드 상태 시뮬레이션
+fetch('http://localhost:8080/location', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'userNumber': 'testUser123'
+  },
+  body: JSON.stringify({
+    latitude: 37.123456,
+    longitude: 127.123456
+  })
+})
+.then(response => {
+  if (response.ok) {
+    console.log('✅ HTTP POST 위치 전송 성공');
+  } else {
+    console.error('❌ HTTP POST 실패:', response.status);
+  }
+})
+.catch(error => console.error('❌ 네트워크 에러:', error));
 ```
 
 ### 3. Postman 테스트
@@ -2090,6 +2254,8 @@ public void checkGeofenceEntry(LocationUpdateDto location) {
 - 💾 **효율**: 조건부 DB 저장 (96% 절감, 전략 패턴 적용)
 - 🔄 **확장성**: 수평 확장 가능 (Redis Pub/Sub)
 - 📡 **이벤트 기반**: WebSocketEventListener를 통한 연결/구독/해제 이벤트 처리
+- 📱 **모바일 최적화**: React Native 네이티브 WebSocket + Heartbeat (10초 주기)
+- 🔌 **백그라운드 폴백**: HTTP POST 메커니즘으로 백그라운드 상태에서도 위치 전송
 
 ### 다음 단계
 1. **Frontend 구현**: React + @stomp/stompjs
