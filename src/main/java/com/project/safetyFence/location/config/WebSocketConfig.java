@@ -19,7 +19,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry config) {
         // 클라이언트가 구독할 destination prefix
         // 예: /topic/location/123
-        config.enableSimpleBroker("/topic");
+        config.enableSimpleBroker("/topic")
+                .setHeartbeatValue(new long[]{10000, 10000});  // 10초마다 heartbeat (연결 유지)
 
         // 클라이언트가 메시지를 보낼 때 사용할 prefix
         // 예: /app/location
@@ -28,10 +29,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // WebSocket 연결 엔드포인트
+        // React Native용 네이티브 WebSocket 엔드포인트
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")  // 모든 origin 허용
-                .withSockJS();
+                .setAllowedOriginPatterns("*");  // 모든 origin 허용 (SockJS 제거)
     }
 
     @Override
