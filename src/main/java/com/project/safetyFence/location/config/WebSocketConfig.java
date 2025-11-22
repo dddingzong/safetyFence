@@ -10,6 +10,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -17,6 +18,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final WebSocketAuthInterceptor webSocketAuthInterceptor;
+    private final WebSocketHandshakeLoggingInterceptor handshakeLoggingInterceptor;
 
     @Bean
     public TaskScheduler heartbeatScheduler() {
@@ -44,6 +46,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // React Native용 네이티브 WebSocket 엔드포인트
         registry.addEndpoint("/ws")
+                .addInterceptors(handshakeLoggingInterceptor)
                 .setAllowedOriginPatterns("*");  // 모든 origin 허용 (SockJS 제거)
     }
 
