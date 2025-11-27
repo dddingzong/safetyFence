@@ -1,0 +1,20 @@
+name: 🐛 Bug Report
+description: 발견한 버그에 대해 알려주세요.
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: input
+    id: environment
+    attributes:
+      label: 환경
+      description: OS, 브라우저, Node.js 버전 등
+      placeholder: 예) macOS 14, Chrome 115, Node 18.x
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: 문제 설명
+      description: 발생한 문제를 최대한 구체적으로 적어주세요.
+    validations:
+      required: true
