@@ -1,11 +1,16 @@
 package com.project.safetyFence.geofence.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 
 @Getter
 public class GeofenceRequestDto {
+    @NotBlank(message = "지오펜스 이름은 필수입니다")
     private String name;
+
+    @NotBlank(message = "주소는 필수입니다")
     private String address;
+
     private int type;
     private String startTime;
     private String endTime;

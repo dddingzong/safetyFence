@@ -7,7 +7,9 @@ import com.project.safetyFence.geofence.dto.GeofenceRequestDto;
 import com.project.safetyFence.geofence.dto.GeofenceResponseDto;
 import com.project.safetyFence.geofence.GeofenceService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class GeofenceController {
@@ -50,6 +53,7 @@ public class GeofenceController {
     }
 
     // TODO: 지오펜스 진입 처리 시 응답 관련 기능 추가 필요
+    // -> 이러면 지속적으로 알림이 간다 + ?
     @PostMapping("/geofence/userFenceIn")
     public ResponseEntity<String> userFenceIn(@RequestBody FenceInRequestDto fenceInRequestDto,
                                              HttpServletRequest request) {
@@ -59,7 +63,7 @@ public class GeofenceController {
     }
 
     @PostMapping("/geofence/newFence")
-    public ResponseEntity<String> createNewFence(@RequestBody GeofenceRequestDto geofenceRequestDto,
+    public ResponseEntity<String> createNewFence(@Valid @RequestBody GeofenceRequestDto geofenceRequestDto,
                                                  HttpServletRequest request) {
         String userNumber = (String) request.getAttribute("userNumber");
         geofenceService.createNewFence(userNumber, geofenceRequestDto);
