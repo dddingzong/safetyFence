@@ -21,8 +21,9 @@ public class MyPageService {
 
     private final UserRepository userRepository;
 
+    @Transactional(readOnly = true)
     public UserDataResponseDto getUserData(String number) {
-        User user = userRepository.findByNumber(number);
+        User user = userRepository.findByNumberWithGeofences(number);
         String name = user.getName();
         LocalDate birth = user.getBirth();
         String linkCode = user.getLinkCode();
