@@ -6,6 +6,7 @@ import com.project.safetyFence.geofence.dto.GeofenceDeleteRequestDto;
 import com.project.safetyFence.geofence.dto.GeofenceRequestDto;
 import com.project.safetyFence.geofence.dto.GeofenceResponseDto;
 import com.project.safetyFence.geofence.GeofenceService;
+import com.project.safetyFence.mypage.dto.NumberRequestDto;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,8 +27,11 @@ public class GeofenceController {
     private final GeofenceService geofenceService;
 
     @PostMapping("/geofence/list")
-    public ResponseEntity<List<GeofenceResponseDto>> findGeofenceList(HttpServletRequest request) {
-        String userNumber = (String) request.getAttribute("userNumber");
+    public ResponseEntity<List<GeofenceResponseDto>> findGeofenceList(HttpServletRequest request, @RequestBody(required = false)NumberRequestDto numberRequestDto) {
+
+        String userNumber = (numberRequestDto != null && numberRequestDto.getNumber() != null)
+                ? numberRequestDto.getNumber()
+                : (String) request.getAttribute("userNumber");
         List<GeofenceResponseDto> responseDtos = new ArrayList<>();
         List<Geofence> geofences = geofenceService.findGeofenceByNumber(userNumber);
 
@@ -61,7 +65,10 @@ public class GeofenceController {
     @PostMapping("/geofence/newFence")
     public ResponseEntity<String> createNewFence(@RequestBody GeofenceRequestDto geofenceRequestDto,
                                                  HttpServletRequest request) {
-        String userNumber = (String) request.getAttribute("userNumber");
+        String userNumber = (geofenceRequestDto.getNumber() != null)
+                ? geofenceRequestDto.getNumber()
+                : (String) request.getAttribute("userNumber");
+
         geofenceService.createNewFence(userNumber, geofenceRequestDto);
         return ResponseEntity.ok("새로운 지오펜스가 성공적으로 생성되었습니다.");
     }
@@ -69,7 +76,11 @@ public class GeofenceController {
     @DeleteMapping("/geofence/deleteFence")
     public ResponseEntity<String> deleteFence(@RequestBody GeofenceDeleteRequestDto geofenceRequestDto
             , HttpServletRequest request) {
-        String userNumber = (String) request.getAttribute("userNumber");
+
+        String userNumber = (geofenceRequestDto.getNumber() != null)
+                ? geofenceRequestDto.getNumber()
+                : (String) request.getAttribute("userNumber");
+
         geofenceService.deleteFence(userNumber, geofenceRequestDto.getId());
         return ResponseEntity.ok("지오펜스가 성공적으로 삭제되었습니다.");
     }
