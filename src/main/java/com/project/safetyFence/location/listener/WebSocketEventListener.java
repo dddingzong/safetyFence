@@ -2,7 +2,6 @@ package com.project.safetyFence.location.listener;
 
 import com.project.safetyFence.location.dto.LocationUpdateDto;
 import com.project.safetyFence.location.LocationCacheService;
-import com.project.safetyFence.location.LocationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -27,7 +26,6 @@ import java.util.regex.Pattern;
 public class WebSocketEventListener {
 
     private final LocationCacheService cacheService;
-    private final LocationService locationService;
     private final SimpMessagingTemplate messagingTemplate;
 
     private static final Pattern LOCATION_TOPIC_PATTERN = Pattern.compile("^/topic/location/([^/]+)$");
@@ -52,7 +50,7 @@ public class WebSocketEventListener {
 
     /**
      * WebSocket 구독 이벤트
-     * 위치 토픽 구독 시 캐시된 최신 위치를 즉시 전송
+     * 위치 토픽 구독 시 최신 위치를 즉시 전송 (캐시 → DB 폴백)
      */
     @EventListener
     public void handleWebSocketSubscribeListener(SessionSubscribeEvent event) {
@@ -74,28 +72,18 @@ public class WebSocketEventListener {
             log.info("위치 토픽 구독 감지: subscriber={}, target={}, destination={}",
                     subscriberNumber, targetUserNumber, destination);
 
-            // 1. 캐시에서 최신 위치 조회
-            LocationUpdateDto location = cacheService.getLatestLocation(targetUserNumber);
+            // 캐시 → DB 폴백으로 최신 위치 조회
+            LocationUpdateDto location = cacheService.getLatestLocationWithFallback(targetUserNumber);
 
             if (location != null) {
-                // 캐시에서 찾음 (실시간 위치)
+                // 토픽 구독자들에게 위치 전송
                 messagingTemplate.convertAndSend(destination, location);
-                log.info("캐시된 위치 전송 완료: subscriber={}, target={}, lat={}, lng={}",
+
+                log.info("위치 전송 완료: subscriber={}, target={}, lat={}, lng={}",
                         subscriberNumber, targetUserNumber,
                         location.getLatitude(), location.getLongitude());
             } else {
-                // 2. 캐시에 없으면 DB에서 마지막 위치 조회 (fallback)
-                log.debug("캐시된 위치 없음, DB에서 조회 시도: target={}", targetUserNumber);
-                location = locationService.getLatestLocationFromDB(targetUserNumber);
-
-                if (location != null) {
-                    messagingTemplate.convertAndSend(destination, location);
-                    log.info("DB 마지막 위치 전송 완료: subscriber={}, target={}, lat={}, lng={}",
-                            subscriberNumber, targetUserNumber,
-                            location.getLatitude(), location.getLongitude());
-                } else {
-                    log.info("위치 정보 없음 (캐시/DB 모두): target={}", targetUserNumber);
-                }
+                log.warn("전송할 위치 데이터 없음: subscriber={}, target={}", subscriberNumber, targetUserNumber);
             }
         }
     }
