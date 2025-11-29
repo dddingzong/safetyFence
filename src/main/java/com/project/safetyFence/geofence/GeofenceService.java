@@ -73,6 +73,11 @@ public class GeofenceService implements InitialGeofenceCreator {
     public void userFenceIn(String userNumber, Long geofenceId) {
         User user = userRepository.findByNumberWithGeofences(userNumber);
 
+        // 디버깅을 위한 로그
+        List<Long> userGeofenceIds = user.getGeofences().stream()
+                .map(Geofence::getId)
+                .toList();
+
         Geofence geofence = user.getGeofences().stream()
                 .filter(g -> g.getId().equals(geofenceId))
                 .findFirst()
@@ -106,6 +111,14 @@ public class GeofenceService implements InitialGeofenceCreator {
                     999
             );
         } else { // 일시 지오펜스
+            // "09:00" 형식의 시간을 오늘 날짜와 결합하여 LocalDateTime으로 변환
+            java.time.LocalDate today = java.time.LocalDate.now();
+            java.time.LocalTime startLocalTime = java.time.LocalTime.parse(geofenceRequestDto.getStartTime());
+            java.time.LocalTime endLocalTime = java.time.LocalTime.parse(geofenceRequestDto.getEndTime());
+
+            java.time.LocalDateTime startDateTime = java.time.LocalDateTime.of(today, startLocalTime);
+            java.time.LocalDateTime endDateTime = java.time.LocalDateTime.of(today, endLocalTime);
+
             geofence = new Geofence(
                     user,
                     geofenceRequestDto.getName(),
@@ -113,8 +126,8 @@ public class GeofenceService implements InitialGeofenceCreator {
                     coordinate.getLatitude(),
                     coordinate.getLongitude(),
                     1,
-                    java.time.LocalDateTime.parse(geofenceRequestDto.getStartTime()),
-                    java.time.LocalDateTime.parse(geofenceRequestDto.getEndTime()),
+                    startDateTime,
+                    endDateTime,
                     100
             );
         }
